@@ -3,8 +3,8 @@ package respjson_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kernel/hypeman-go/internal/apijson"
-	rj "github.com/kernel/hypeman-go/packages/respjson"
+	"github.com/kernel/hypeman/internal/apijson"
+	rj "github.com/kernel/hypeman/packages/respjson"
 	"reflect"
 	"testing"
 )
