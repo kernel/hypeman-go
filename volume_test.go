@@ -10,9 +10,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kernel/hypeman-go"
-	"github.com/kernel/hypeman-go/internal/testutil"
-	"github.com/kernel/hypeman-go/option"
+	"github.com/kernel/hypeman"
+	"github.com/kernel/hypeman/internal/testutil"
+	"github.com/kernel/hypeman/option"
 )
 
 func TestVolumeNewWithOptionalParams(t *testing.T) {

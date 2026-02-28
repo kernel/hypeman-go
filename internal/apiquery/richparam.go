@@ -1,7 +1,7 @@
 package apiquery
 
 import (
-	"github.com/kernel/hypeman-go/packages/param"
+	"github.com/kernel/hypeman/packages/param"
 	"reflect"
 )
 
