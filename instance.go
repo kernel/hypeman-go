@@ -12,13 +12,13 @@ import (
 	"slices"
 	"time"
 
-	"github.com/kernel/hypeman-go/internal/apijson"
-	"github.com/kernel/hypeman-go/internal/apiquery"
-	"github.com/kernel/hypeman-go/internal/requestconfig"
-	"github.com/kernel/hypeman-go/option"
-	"github.com/kernel/hypeman-go/packages/param"
-	"github.com/kernel/hypeman-go/packages/respjson"
-	"github.com/kernel/hypeman-go/packages/ssestream"
+	"github.com/kernel/hypeman/internal/apijson"
+	"github.com/kernel/hypeman/internal/apiquery"
+	"github.com/kernel/hypeman/internal/requestconfig"
+	"github.com/kernel/hypeman/option"
+	"github.com/kernel/hypeman/packages/param"
+	"github.com/kernel/hypeman/packages/respjson"
+	"github.com/kernel/hypeman/packages/ssestream"
 )
 
 // InstanceService contains methods and other services that help with interacting

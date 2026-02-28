@@ -1,8 +1,8 @@
 package paramutil
 
 import (
-	"github.com/kernel/hypeman-go/packages/param"
-	"github.com/kernel/hypeman-go/packages/respjson"
+	"github.com/kernel/hypeman/packages/param"
+	"github.com/kernel/hypeman/packages/respjson"
 )
 
 func AddrIfPresent[T comparable](v param.Opt[T]) *T {
