@@ -2,7 +2,7 @@ package paramutil
 
 import (
 	"fmt"
-	"github.com/kernel/hypeman/packages/param"
+	"github.com/kernel/hypeman-go/packages/param"
 	"reflect"
 )
 
