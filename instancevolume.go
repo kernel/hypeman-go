@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/kernel/hypeman/internal/apijson"
-	"github.com/kernel/hypeman/internal/requestconfig"
-	"github.com/kernel/hypeman/option"
-	"github.com/kernel/hypeman/packages/param"
+	"github.com/kernel/hypeman-go/internal/apijson"
+	"github.com/kernel/hypeman-go/internal/requestconfig"
+	"github.com/kernel/hypeman-go/option"
+	"github.com/kernel/hypeman-go/packages/param"
 )
 
 // InstanceVolumeService contains methods and other services that help with

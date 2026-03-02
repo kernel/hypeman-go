@@ -1,8 +1,8 @@
 package sentinel_test
 
 import (
-	"github.com/kernel/hypeman/internal/encoding/json/sentinel"
-	"github.com/kernel/hypeman/packages/param"
+	"github.com/kernel/hypeman-go/internal/encoding/json/sentinel"
+	"github.com/kernel/hypeman-go/packages/param"
 	"reflect"
 	"slices"
 	"testing"
