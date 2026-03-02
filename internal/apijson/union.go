@@ -2,7 +2,7 @@ package apijson
 
 import (
 	"errors"
-	"github.com/kernel/hypeman/packages/param"
+	"github.com/kernel/hypeman-go/packages/param"
 	"reflect"
 
 	"github.com/tidwall/gjson"

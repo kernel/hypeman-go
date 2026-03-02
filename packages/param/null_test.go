@@ -2,7 +2,7 @@ package param_test
 
 import (
 	"encoding/json"
-	"github.com/kernel/hypeman/packages/param"
+	"github.com/kernel/hypeman-go/packages/param"
 	"testing"
 )
 

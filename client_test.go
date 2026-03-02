@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kernel/hypeman"
-	"github.com/kernel/hypeman/internal"
-	"github.com/kernel/hypeman/option"
+	"github.com/kernel/hypeman-go"
+	"github.com/kernel/hypeman-go/internal"
+	"github.com/kernel/hypeman-go/option"
 )
 
 type closureTransport struct {
