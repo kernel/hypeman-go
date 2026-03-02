@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.14.0 (2026-03-02)
+
+Full Changelog: [v0.13.0...v0.14.0](https://github.com/kernel/hypeman-go/compare/v0.13.0...v0.14.0)
+
+### Features
+
+* Add cloud hypervisor VM forking helpers ([bfac548](https://github.com/kernel/hypeman-go/commit/bfac548bac8dab6cbe47dd39f0f8cc7fd53b0339))
+* add Firecracker hypervisor support ([251f4b9](https://github.com/kernel/hypeman-go/commit/251f4b953c665f32305f393196974c8cb4fe7ec3))
+
+
+### Chores
+
+* **stainless:** update SDKs for PR [#116](https://github.com/kernel/hypeman-go/issues/116) ([560f851](https://github.com/kernel/hypeman-go/commit/560f8512392ffda9d3f478494b593bda363b1c86))
+
 ## 0.13.0 (2026-02-26)
 
 Full Changelog: [v0.12.0...v0.13.0](https://github.com/kernel/hypeman-go/compare/v0.12.0...v0.13.0)
