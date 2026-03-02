@@ -208,7 +208,7 @@ type Instance struct {
 	HotplugSize string `json:"hotplug_size"`
 	// Hypervisor running this instance
 	//
-	// Any of "cloud-hypervisor", "qemu", "vz".
+	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
 	Hypervisor InstanceHypervisor `json:"hypervisor"`
 	// User-defined key-value metadata
 	Metadata map[string]string `json:"metadata"`
@@ -310,6 +310,7 @@ type InstanceHypervisor string
 
 const (
 	InstanceHypervisorCloudHypervisor InstanceHypervisor = "cloud-hypervisor"
+	InstanceHypervisorFirecracker     InstanceHypervisor = "firecracker"
 	InstanceHypervisorQemu            InstanceHypervisor = "qemu"
 	InstanceHypervisorVz              InstanceHypervisor = "vz"
 )
@@ -490,7 +491,7 @@ type InstanceNewParams struct {
 	GPU InstanceNewParamsGPU `json:"gpu,omitzero"`
 	// Hypervisor to use for this instance. Defaults to server configuration.
 	//
-	// Any of "cloud-hypervisor", "qemu", "vz".
+	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
 	Hypervisor InstanceNewParamsHypervisor `json:"hypervisor,omitzero"`
 	// User-defined key-value metadata for the instance
 	Metadata map[string]string `json:"metadata,omitzero"`
@@ -529,6 +530,7 @@ type InstanceNewParamsHypervisor string
 
 const (
 	InstanceNewParamsHypervisorCloudHypervisor InstanceNewParamsHypervisor = "cloud-hypervisor"
+	InstanceNewParamsHypervisorFirecracker     InstanceNewParamsHypervisor = "firecracker"
 	InstanceNewParamsHypervisorQemu            InstanceNewParamsHypervisor = "qemu"
 	InstanceNewParamsHypervisorVz              InstanceNewParamsHypervisor = "vz"
 )
