@@ -124,6 +124,37 @@ func TestInstanceDelete(t *testing.T) {
 	}
 }
 
+func TestInstanceForkWithOptionalParams(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := hypeman.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Instances.Fork(
+		context.TODO(),
+		"id",
+		hypeman.InstanceForkParams{
+			Name:        "my-workload-1-fork",
+			FromRunning: hypeman.Bool(false),
+			TargetState: hypeman.InstanceForkParamsTargetStateRunning,
+		},
+	)
+	if err != nil {
+		var apierr *hypeman.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
 func TestInstanceGet(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
@@ -244,6 +275,29 @@ func TestInstanceStatWithOptionalParams(t *testing.T) {
 			FollowLinks: hypeman.Bool(true),
 		},
 	)
+	if err != nil {
+		var apierr *hypeman.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestInstanceStats(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := hypeman.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Instances.Stats(context.TODO(), "id")
 	if err != nil {
 		var apierr *hypeman.Error
 		if errors.As(err, &apierr) {
