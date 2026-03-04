@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.15.0 (2026-03-04)
+
+Full Changelog: [v0.14.0...v0.15.0](https://github.com/kernel/hypeman-go/compare/v0.14.0...v0.15.0)
+
+### Features
+
+* Add fork operation to stainless config ([5ab52b7](https://github.com/kernel/hypeman-go/commit/5ab52b7c74031eb7e874615aa42c00090cb00b51))
+
+
+### Chores
+
+* **internal:** codegen related update ([83363a5](https://github.com/kernel/hypeman-go/commit/83363a5275d88e131d0736516fea215faaab84a7))
+
 ## 0.14.0 (2026-03-02)
 
 Full Changelog: [v0.13.0...v0.14.0](https://github.com/kernel/hypeman-go/compare/v0.13.0...v0.14.0)
