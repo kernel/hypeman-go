@@ -71,6 +71,18 @@ func (r *InstanceService) Delete(ctx context.Context, id string, opts ...option.
 	return
 }
 
+// Fork an instance from stopped, standby, or running (with from_running=true)
+func (r *InstanceService) Fork(ctx context.Context, id string, body InstanceForkParams, opts ...option.RequestOption) (res *Instance, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	path := fmt.Sprintf("instances/%s/fork", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return
+}
+
 // Get instance details
 func (r *InstanceService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *Instance, err error) {
 	opts = slices.Concat(r.Options, opts)
@@ -154,6 +166,20 @@ func (r *InstanceService) Stat(ctx context.Context, id string, query InstanceSta
 	}
 	path := fmt.Sprintf("instances/%s/stat", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
+	return
+}
+
+// Returns real-time resource utilization statistics for a running VM instance.
+// Metrics are collected from /proc/<pid>/stat and /proc/<pid>/statm for CPU and
+// memory, and from TAP interface statistics for network I/O.
+func (r *InstanceService) Stats(ctx context.Context, id string, opts ...option.RequestOption) (res *InstanceStats, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	path := fmt.Sprintf("instances/%s/stats", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return
 }
 
@@ -345,6 +371,52 @@ type InstanceNetwork struct {
 // Returns the unmodified JSON received from the API
 func (r InstanceNetwork) RawJSON() string { return r.JSON.raw }
 func (r *InstanceNetwork) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Real-time resource utilization statistics for a VM instance
+type InstanceStats struct {
+	// Total memory allocated to the VM (Size + HotplugSize) in bytes
+	AllocatedMemoryBytes int64 `json:"allocated_memory_bytes" api:"required"`
+	// Number of vCPUs allocated to the VM
+	AllocatedVcpus int64 `json:"allocated_vcpus" api:"required"`
+	// Total CPU time consumed by the VM hypervisor process in seconds
+	CPUSeconds float64 `json:"cpu_seconds" api:"required"`
+	// Instance identifier
+	InstanceID string `json:"instance_id" api:"required"`
+	// Instance name
+	InstanceName string `json:"instance_name" api:"required"`
+	// Resident Set Size - actual physical memory used by the VM in bytes
+	MemoryRssBytes int64 `json:"memory_rss_bytes" api:"required"`
+	// Virtual Memory Size - total virtual memory allocated in bytes
+	MemoryVmsBytes int64 `json:"memory_vms_bytes" api:"required"`
+	// Total network bytes received by the VM (from TAP interface)
+	NetworkRxBytes int64 `json:"network_rx_bytes" api:"required"`
+	// Total network bytes transmitted by the VM (from TAP interface)
+	NetworkTxBytes int64 `json:"network_tx_bytes" api:"required"`
+	// Memory utilization ratio (RSS / allocated memory). Only present when
+	// allocated_memory_bytes > 0.
+	MemoryUtilizationRatio float64 `json:"memory_utilization_ratio" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AllocatedMemoryBytes   respjson.Field
+		AllocatedVcpus         respjson.Field
+		CPUSeconds             respjson.Field
+		InstanceID             respjson.Field
+		InstanceName           respjson.Field
+		MemoryRssBytes         respjson.Field
+		MemoryVmsBytes         respjson.Field
+		NetworkRxBytes         respjson.Field
+		NetworkTxBytes         respjson.Field
+		MemoryUtilizationRatio respjson.Field
+		ExtraFields            map[string]respjson.Field
+		raw                    string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r InstanceStats) RawJSON() string { return r.JSON.raw }
+func (r *InstanceStats) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -588,6 +660,41 @@ const (
 	InstanceListParamsStateStopped  InstanceListParamsState = "Stopped"
 	InstanceListParamsStateStandby  InstanceListParamsState = "Standby"
 	InstanceListParamsStateUnknown  InstanceListParamsState = "Unknown"
+)
+
+type InstanceForkParams struct {
+	// Name for the forked instance (lowercase letters, digits, and dashes only; cannot
+	// start or end with a dash)
+	Name string `json:"name" api:"required"`
+	// Allow forking from a running source instance. When true and source is Running,
+	// the source is put into standby, forked, then restored back to Running.
+	FromRunning param.Opt[bool] `json:"from_running,omitzero"`
+	// Optional final state for the forked instance. Default is the source instance
+	// state at fork time. For example, forking from Running defaults the fork result
+	// to Running.
+	//
+	// Any of "Stopped", "Standby", "Running".
+	TargetState InstanceForkParamsTargetState `json:"target_state,omitzero"`
+	paramObj
+}
+
+func (r InstanceForkParams) MarshalJSON() (data []byte, err error) {
+	type shadow InstanceForkParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *InstanceForkParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Optional final state for the forked instance. Default is the source instance
+// state at fork time. For example, forking from Running defaults the fork result
+// to Running.
+type InstanceForkParamsTargetState string
+
+const (
+	InstanceForkParamsTargetStateStopped InstanceForkParamsTargetState = "Stopped"
+	InstanceForkParamsTargetStateStandby InstanceForkParamsTargetState = "Standby"
+	InstanceForkParamsTargetStateRunning InstanceForkParamsTargetState = "Running"
 )
 
 type InstanceLogsParams struct {
