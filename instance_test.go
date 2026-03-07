@@ -43,8 +43,8 @@ func TestInstanceNewWithOptionalParams(t *testing.T) {
 		HotplugSize: hypeman.String("2GB"),
 		Hypervisor:  hypeman.InstanceNewParamsHypervisorCloudHypervisor,
 		Metadata: map[string]string{
-			"team":    "backend",
-			"purpose": "staging",
+			"team": "backend",
+			"env":  "staging",
 		},
 		Network: hypeman.InstanceNewParamsNetwork{
 			BandwidthDownload: hypeman.String("1Gbps"),
@@ -88,7 +88,8 @@ func TestInstanceListWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Instances.List(context.TODO(), hypeman.InstanceListParams{
 		Metadata: map[string]string{
-			"foo": "string",
+			"team": "backend",
+			"env":  "staging",
 		},
 		State: hypeman.InstanceListParamsStateCreated,
 	})

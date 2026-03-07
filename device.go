@@ -7,10 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"time"
 
 	"github.com/kernel/hypeman-go/internal/apijson"
+	"github.com/kernel/hypeman-go/internal/apiquery"
 	"github.com/kernel/hypeman-go/internal/requestconfig"
 	"github.com/kernel/hypeman-go/option"
 	"github.com/kernel/hypeman-go/packages/param"
@@ -57,10 +59,10 @@ func (r *DeviceService) Get(ctx context.Context, id string, opts ...option.Reque
 }
 
 // List registered devices
-func (r *DeviceService) List(ctx context.Context, opts ...option.RequestOption) (res *[]Device, err error) {
+func (r *DeviceService) List(ctx context.Context, query DeviceListParams, opts ...option.RequestOption) (res *[]Device, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "devices"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return
 }
 
@@ -147,6 +149,8 @@ type Device struct {
 	VendorID string `json:"vendor_id" api:"required"`
 	// Instance ID if attached
 	AttachedTo string `json:"attached_to" api:"nullable"`
+	// User-defined key-value metadata tags.
+	Metadata map[string]string `json:"metadata"`
 	// Device name (user-provided or auto-generated from PCI address)
 	Name string `json:"name"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -160,6 +164,7 @@ type Device struct {
 		Type        respjson.Field
 		VendorID    respjson.Field
 		AttachedTo  respjson.Field
+		Metadata    respjson.Field
 		Name        respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
@@ -186,6 +191,8 @@ type DeviceNewParams struct {
 	// Optional globally unique device name. If not provided, a name is auto-generated
 	// from the PCI address (e.g., "pci-0000-a2-00-0")
 	Name param.Opt[string] `json:"name,omitzero"`
+	// User-defined key-value metadata tags.
+	Metadata map[string]string `json:"metadata,omitzero"`
 	paramObj
 }
 
@@ -195,4 +202,18 @@ func (r DeviceNewParams) MarshalJSON() (data []byte, err error) {
 }
 func (r *DeviceNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type DeviceListParams struct {
+	// Filter devices by metadata key-value pairs.
+	Metadata map[string]string `query:"metadata,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [DeviceListParams]'s query parameters as `url.Values`.
+func (r DeviceListParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }

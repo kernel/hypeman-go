@@ -28,8 +28,9 @@ import (
 // automatically. You should not instantiate this service directly, and instead use
 // the [NewInstanceService] method instead.
 type InstanceService struct {
-	Options []option.RequestOption
-	Volumes InstanceVolumeService
+	Options   []option.RequestOption
+	Volumes   InstanceVolumeService
+	Snapshots InstanceSnapshotService
 }
 
 // NewInstanceService generates a new service that applies the given options to
@@ -39,6 +40,7 @@ func NewInstanceService(opts ...option.RequestOption) (r InstanceService) {
 	r = InstanceService{}
 	r.Options = opts
 	r.Volumes = NewInstanceVolumeService(opts...)
+	r.Snapshots = NewInstanceSnapshotService(opts...)
 	return
 }
 
@@ -236,7 +238,7 @@ type Instance struct {
 	//
 	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
 	Hypervisor InstanceHypervisor `json:"hypervisor"`
-	// User-defined key-value metadata
+	// User-defined key-value metadata tags.
 	Metadata map[string]string `json:"metadata"`
 	// Network configuration of the instance
 	Network InstanceNetwork `json:"network"`
@@ -565,7 +567,7 @@ type InstanceNewParams struct {
 	//
 	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
 	Hypervisor InstanceNewParamsHypervisor `json:"hypervisor,omitzero"`
-	// User-defined key-value metadata for the instance
+	// User-defined key-value metadata tags.
 	Metadata map[string]string `json:"metadata,omitzero"`
 	// Network configuration for the instance
 	Network InstanceNewParamsNetwork `json:"network,omitzero"`

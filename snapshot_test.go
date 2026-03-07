@@ -3,10 +3,8 @@
 package hypeman_test
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"io"
 	"os"
 	"testing"
 
@@ -15,7 +13,7 @@ import (
 	"github.com/kernel/hypeman-go/option"
 )
 
-func TestBuildNewWithOptionalParams(t *testing.T) {
+func TestSnapshotListWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -28,47 +26,14 @@ func TestBuildNewWithOptionalParams(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Builds.New(context.TODO(), hypeman.BuildNewParams{
-		Source:          io.Reader(bytes.NewBuffer([]byte("Example data"))),
-		BaseImageDigest: hypeman.String("base_image_digest"),
-		CacheScope:      hypeman.String("cache_scope"),
-		CPUs:            hypeman.Int(0),
-		Dockerfile:      hypeman.String("dockerfile"),
-		GlobalCacheKey:  hypeman.String("global_cache_key"),
-		ImageName:       hypeman.String("image_name"),
-		IsAdminBuild:    hypeman.String("is_admin_build"),
-		MemoryMB:        hypeman.Int(0),
-		Metadata:        hypeman.String("metadata"),
-		Secrets:         hypeman.String("secrets"),
-		TimeoutSeconds:  hypeman.Int(0),
-	})
-	if err != nil {
-		var apierr *hypeman.Error
-		if errors.As(err, &apierr) {
-			t.Log(string(apierr.DumpRequest(true)))
-		}
-		t.Fatalf("err should be nil: %s", err.Error())
-	}
-}
-
-func TestBuildListWithOptionalParams(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
-	baseURL := "http://localhost:4010"
-	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
-		baseURL = envURL
-	}
-	if !testutil.CheckTestServer(t, baseURL) {
-		return
-	}
-	client := hypeman.NewClient(
-		option.WithBaseURL(baseURL),
-		option.WithAPIKey("My API Key"),
-	)
-	_, err := client.Builds.List(context.TODO(), hypeman.BuildListParams{
+	_, err := client.Snapshots.List(context.TODO(), hypeman.SnapshotListParams{
+		Kind: hypeman.SnapshotKindStandby,
 		Metadata: map[string]string{
 			"team": "backend",
 			"env":  "staging",
 		},
+		Name:             hypeman.String("name"),
+		SourceInstanceID: hypeman.String("source_instance_id"),
 	})
 	if err != nil {
 		var apierr *hypeman.Error
@@ -79,7 +44,7 @@ func TestBuildListWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestBuildCancel(t *testing.T) {
+func TestSnapshotDelete(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -92,7 +57,7 @@ func TestBuildCancel(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	err := client.Builds.Cancel(context.TODO(), "id")
+	err := client.Snapshots.Delete(context.TODO(), "snapshotId")
 	if err != nil {
 		var apierr *hypeman.Error
 		if errors.As(err, &apierr) {
@@ -102,7 +67,7 @@ func TestBuildCancel(t *testing.T) {
 	}
 }
 
-func TestBuildGet(t *testing.T) {
+func TestSnapshotForkWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -115,7 +80,38 @@ func TestBuildGet(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Builds.Get(context.TODO(), "id")
+	_, err := client.Snapshots.Fork(
+		context.TODO(),
+		"snapshotId",
+		hypeman.SnapshotForkParams{
+			Name:             "nginx-from-snap",
+			TargetHypervisor: hypeman.SnapshotForkParamsTargetHypervisorCloudHypervisor,
+			TargetState:      hypeman.SnapshotForkParamsTargetStateRunning,
+		},
+	)
+	if err != nil {
+		var apierr *hypeman.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestSnapshotGet(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := hypeman.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Snapshots.Get(context.TODO(), "snapshotId")
 	if err != nil {
 		var apierr *hypeman.Error
 		if errors.As(err, &apierr) {

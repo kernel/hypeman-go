@@ -32,6 +32,10 @@ func TestVolumeNewWithOptionalParams(t *testing.T) {
 		Name:   "my-data-volume",
 		SizeGB: 10,
 		ID:     hypeman.String("vol-data-1"),
+		Metadata: map[string]string{
+			"team": "backend",
+			"env":  "staging",
+		},
 	})
 	if err != nil {
 		var apierr *hypeman.Error
@@ -42,7 +46,7 @@ func TestVolumeNewWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestVolumeList(t *testing.T) {
+func TestVolumeListWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -55,7 +59,12 @@ func TestVolumeList(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Volumes.List(context.TODO())
+	_, err := client.Volumes.List(context.TODO(), hypeman.VolumeListParams{
+		Metadata: map[string]string{
+			"team": "backend",
+			"env":  "staging",
+		},
+	})
 	if err != nil {
 		var apierr *hypeman.Error
 		if errors.As(err, &apierr) {
@@ -103,11 +112,15 @@ func TestVolumeNewFromArchiveWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Volumes.NewFromArchive(
 		context.TODO(),
-		io.Reader(bytes.NewBuffer([]byte("some file contents"))),
+		io.Reader(bytes.NewBuffer([]byte("Example data"))),
 		hypeman.VolumeNewFromArchiveParams{
 			Name:   "name",
 			SizeGB: 0,
 			ID:     hypeman.String("id"),
+			Metadata: map[string]string{
+				"team": "backend",
+				"env":  "staging",
+			},
 		},
 	)
 	if err != nil {
