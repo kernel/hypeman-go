@@ -102,6 +102,8 @@ type Snapshot struct {
 	SourceInstanceID string `json:"source_instance_id" api:"required"`
 	// Source instance name at snapshot creation time
 	SourceInstanceName string `json:"source_instance_name" api:"required"`
+	// User-defined key-value metadata tags.
+	Metadata map[string]string `json:"metadata"`
 	// Optional human-readable snapshot name (unique per source instance)
 	Name string `json:"name" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -113,6 +115,7 @@ type Snapshot struct {
 		SourceHypervisor   respjson.Field
 		SourceInstanceID   respjson.Field
 		SourceInstanceName respjson.Field
+		Metadata           respjson.Field
 		Name               respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
@@ -152,6 +155,8 @@ type SnapshotListParams struct {
 	//
 	// Any of "Standby", "Stopped".
 	Kind SnapshotKind `query:"kind,omitzero" json:"-"`
+	// Filter snapshots by metadata key-value pairs.
+	Metadata map[string]string `query:"metadata,omitzero" json:"-"`
 	paramObj
 }
 
