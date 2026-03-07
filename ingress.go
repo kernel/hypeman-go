@@ -8,10 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"time"
 
 	"github.com/kernel/hypeman-go/internal/apijson"
+	"github.com/kernel/hypeman-go/internal/apiquery"
 	"github.com/kernel/hypeman-go/internal/requestconfig"
 	"github.com/kernel/hypeman-go/option"
 	"github.com/kernel/hypeman-go/packages/param"
@@ -46,10 +48,10 @@ func (r *IngressService) New(ctx context.Context, body IngressNewParams, opts ..
 }
 
 // List ingresses
-func (r *IngressService) List(ctx context.Context, opts ...option.RequestOption) (res *[]Ingress, err error) {
+func (r *IngressService) List(ctx context.Context, query IngressListParams, opts ...option.RequestOption) (res *[]Ingress, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "ingresses"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return
 }
 
@@ -87,12 +89,15 @@ type Ingress struct {
 	Name string `json:"name" api:"required"`
 	// Routing rules for this ingress
 	Rules []IngressRule `json:"rules" api:"required"`
+	// User-defined key-value metadata tags.
+	Metadata map[string]string `json:"metadata"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
 		CreatedAt   respjson.Field
 		Name        respjson.Field
 		Rules       respjson.Field
+		Metadata    respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -284,6 +289,8 @@ type IngressNewParams struct {
 	Name string `json:"name" api:"required"`
 	// Routing rules for this ingress
 	Rules []IngressRuleParam `json:"rules,omitzero" api:"required"`
+	// User-defined key-value metadata tags.
+	Metadata map[string]string `json:"metadata,omitzero"`
 	paramObj
 }
 
@@ -293,4 +300,18 @@ func (r IngressNewParams) MarshalJSON() (data []byte, err error) {
 }
 func (r *IngressNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type IngressListParams struct {
+	// Filter ingresses by metadata key-value pairs.
+	Metadata map[string]string `query:"metadata,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [IngressListParams]'s query parameters as `url.Values`.
+func (r IngressListParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }

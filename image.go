@@ -7,10 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"time"
 
 	"github.com/kernel/hypeman-go/internal/apijson"
+	"github.com/kernel/hypeman-go/internal/apiquery"
 	"github.com/kernel/hypeman-go/internal/requestconfig"
 	"github.com/kernel/hypeman-go/option"
 	"github.com/kernel/hypeman-go/packages/param"
@@ -45,10 +47,10 @@ func (r *ImageService) New(ctx context.Context, body ImageNewParams, opts ...opt
 }
 
 // List images
-func (r *ImageService) List(ctx context.Context, opts ...option.RequestOption) (res *[]Image, err error) {
+func (r *ImageService) List(ctx context.Context, query ImageListParams, opts ...option.RequestOption) (res *[]Image, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "images"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return
 }
 
@@ -96,6 +98,8 @@ type Image struct {
 	Env map[string]string `json:"env"`
 	// Error message if status is failed
 	Error string `json:"error" api:"nullable"`
+	// User-defined key-value metadata tags.
+	Metadata map[string]string `json:"metadata"`
 	// Position in build queue (null if not queued)
 	QueuePosition int64 `json:"queue_position" api:"nullable"`
 	// Disk size in bytes (null until ready)
@@ -112,6 +116,7 @@ type Image struct {
 		Entrypoint    respjson.Field
 		Env           respjson.Field
 		Error         respjson.Field
+		Metadata      respjson.Field
 		QueuePosition respjson.Field
 		SizeBytes     respjson.Field
 		WorkingDir    respjson.Field
@@ -140,6 +145,8 @@ const (
 type ImageNewParams struct {
 	// OCI image reference (e.g., docker.io/library/nginx:latest)
 	Name string `json:"name" api:"required"`
+	// User-defined key-value metadata tags.
+	Metadata map[string]string `json:"metadata,omitzero"`
 	paramObj
 }
 
@@ -149,4 +156,18 @@ func (r ImageNewParams) MarshalJSON() (data []byte, err error) {
 }
 func (r *ImageNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type ImageListParams struct {
+	// Filter images by metadata key-value pairs.
+	Metadata map[string]string `query:"metadata,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [ImageListParams]'s query parameters as `url.Values`.
+func (r ImageListParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }

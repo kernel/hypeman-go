@@ -53,10 +53,10 @@ func (r *BuildService) New(ctx context.Context, body BuildNewParams, opts ...opt
 }
 
 // List builds
-func (r *BuildService) List(ctx context.Context, opts ...option.RequestOption) (res *[]Build, err error) {
+func (r *BuildService) List(ctx context.Context, query BuildListParams, opts ...option.RequestOption) (res *[]Build, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "builds"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return
 }
 
@@ -128,8 +128,10 @@ type Build struct {
 	// Digest of built image (only when status is ready)
 	ImageDigest string `json:"image_digest" api:"nullable"`
 	// Full image reference (only when status is ready)
-	ImageRef   string          `json:"image_ref" api:"nullable"`
-	Provenance BuildProvenance `json:"provenance"`
+	ImageRef string `json:"image_ref" api:"nullable"`
+	// User-defined key-value metadata tags.
+	Metadata   map[string]string `json:"metadata"`
+	Provenance BuildProvenance   `json:"provenance"`
 	// Position in build queue (only when status is queued)
 	QueuePosition int64 `json:"queue_position" api:"nullable"`
 	// Build start timestamp
@@ -145,6 +147,7 @@ type Build struct {
 		Error             respjson.Field
 		ImageDigest       respjson.Field
 		ImageRef          respjson.Field
+		Metadata          respjson.Field
 		Provenance        respjson.Field
 		QueuePosition     respjson.Field
 		StartedAt         respjson.Field
@@ -262,6 +265,8 @@ type BuildNewParams struct {
 	IsAdminBuild param.Opt[string] `json:"is_admin_build,omitzero"`
 	// Memory limit for builder VM in MB (default 2048)
 	MemoryMB param.Opt[int64] `json:"memory_mb,omitzero"`
+	// JSON object of metadata tags. Example: {"team":"backend","env":"staging"}
+	Metadata param.Opt[string] `json:"metadata,omitzero"`
 	// JSON array of secret references to inject during build. Each object has "id"
 	// (required) for use with --mount=type=secret,id=... Example: [{"id":
 	// "npm_token"}, {"id": "github_token"}]
@@ -287,6 +292,20 @@ func (r BuildNewParams) MarshalMultipart() (data []byte, contentType string, err
 		return nil, "", err
 	}
 	return buf.Bytes(), writer.FormDataContentType(), nil
+}
+
+type BuildListParams struct {
+	// Filter builds by metadata key-value pairs.
+	Metadata map[string]string `query:"metadata,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [BuildListParams]'s query parameters as `url.Values`.
+func (r BuildListParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }
 
 type BuildEventsParams struct {

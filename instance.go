@@ -238,7 +238,7 @@ type Instance struct {
 	//
 	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
 	Hypervisor InstanceHypervisor `json:"hypervisor"`
-	// User-defined key-value metadata
+	// User-defined key-value metadata tags.
 	Metadata map[string]string `json:"metadata"`
 	// Network configuration of the instance
 	Network InstanceNetwork `json:"network"`
@@ -567,7 +567,7 @@ type InstanceNewParams struct {
 	//
 	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
 	Hypervisor InstanceNewParamsHypervisor `json:"hypervisor,omitzero"`
-	// User-defined key-value metadata for the instance
+	// User-defined key-value metadata tags.
 	Metadata map[string]string `json:"metadata,omitzero"`
 	// Network configuration for the instance
 	Network InstanceNewParamsNetwork `json:"network,omitzero"`
