@@ -27,7 +27,11 @@ func TestSnapshotListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Snapshots.List(context.TODO(), hypeman.SnapshotListParams{
-		Kind:             hypeman.SnapshotKindStandby,
+		Kind: hypeman.SnapshotKindStandby,
+		Metadata: map[string]string{
+			"team": "backend",
+			"env":  "staging",
+		},
 		Name:             hypeman.String("name"),
 		SourceInstanceID: hypeman.String("source_instance_id"),
 	})

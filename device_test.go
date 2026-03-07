@@ -28,7 +28,11 @@ func TestDeviceNewWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Devices.New(context.TODO(), hypeman.DeviceNewParams{
 		PciAddress: "0000:a2:00.0",
-		Name:       hypeman.String("l4-gpu"),
+		Metadata: map[string]string{
+			"team": "backend",
+			"env":  "staging",
+		},
+		Name: hypeman.String("l4-gpu"),
 	})
 	if err != nil {
 		var apierr *hypeman.Error
@@ -62,7 +66,7 @@ func TestDeviceGet(t *testing.T) {
 	}
 }
 
-func TestDeviceList(t *testing.T) {
+func TestDeviceListWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -75,7 +79,12 @@ func TestDeviceList(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Devices.List(context.TODO())
+	_, err := client.Devices.List(context.TODO(), hypeman.DeviceListParams{
+		Metadata: map[string]string{
+			"team": "backend",
+			"env":  "staging",
+		},
+	})
 	if err != nil {
 		var apierr *hypeman.Error
 		if errors.As(err, &apierr) {
