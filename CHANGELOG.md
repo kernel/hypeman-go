@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.16.0 (2026-03-07)
+
+Full Changelog: [v0.15.0...v0.16.0](https://github.com/kernel/hypeman-go/compare/v0.15.0...v0.16.0)
+
+### Features
+
+* Add strict metadata tags across mutable resources ([8b5543e](https://github.com/kernel/hypeman-go/commit/8b5543e6f8fed7062d28c37fa35ba031e14c6f79))
+* Snapshot ([c4a0fbb](https://github.com/kernel/hypeman-go/commit/c4a0fbb34ee2b325229f6a02ae9cc3c57346788d))
+
+
+### Chores
+
+* **ci:** skip uploading artifacts on stainless-internal branches ([0d9d654](https://github.com/kernel/hypeman-go/commit/0d9d654f8074387de55f5befe709477c6905deaa))
+* **internal:** codegen related update ([e6a6702](https://github.com/kernel/hypeman-go/commit/e6a6702ba1fcf355cf64a60fd016393e5474e9bc))
+* update placeholder string ([bea84ac](https://github.com/kernel/hypeman-go/commit/bea84ac19f1178f378cc6ba8bad07a26848b5492))
+
 ## 0.15.0 (2026-03-04)
 
 Full Changelog: [v0.14.0...v0.15.0](https://github.com/kernel/hypeman-go/compare/v0.14.0...v0.15.0)
