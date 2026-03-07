@@ -29,7 +29,7 @@ func TestBuildNewWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Builds.New(context.TODO(), hypeman.BuildNewParams{
-		Source:          io.Reader(bytes.NewBuffer([]byte("some file contents"))),
+		Source:          io.Reader(bytes.NewBuffer([]byte("Example data"))),
 		BaseImageDigest: hypeman.String("base_image_digest"),
 		CacheScope:      hypeman.String("cache_scope"),
 		CPUs:            hypeman.Int(0),

@@ -112,7 +112,7 @@ func TestVolumeNewFromArchiveWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Volumes.NewFromArchive(
 		context.TODO(),
-		io.Reader(bytes.NewBuffer([]byte("some file contents"))),
+		io.Reader(bytes.NewBuffer([]byte("Example data"))),
 		hypeman.VolumeNewFromArchiveParams{
 			Name:   "name",
 			SizeGB: 0,
