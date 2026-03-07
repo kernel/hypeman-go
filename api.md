@@ -56,6 +56,31 @@ Methods:
 - <code title="post /instances/{id}/volumes/{volumeId}">client.Instances.Volumes.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceVolumeService.Attach">Attach</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, volumeID <a href="https://pkg.go.dev/builtin#string">string</a>, params <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceVolumeAttachParams">InstanceVolumeAttachParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Instance">Instance</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="delete /instances/{id}/volumes/{volumeId}">client.Instances.Volumes.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceVolumeService.Detach">Detach</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, volumeID <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceVolumeDetachParams">InstanceVolumeDetachParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Instance">Instance</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
+## Snapshots
+
+Methods:
+
+- <code title="post /instances/{id}/snapshots">client.Instances.Snapshots.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceSnapshotService.New">New</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceSnapshotNewParams">InstanceSnapshotNewParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Snapshot">Snapshot</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="post /instances/{id}/snapshots/{snapshotId}/restore">client.Instances.Snapshots.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceSnapshotService.Restore">Restore</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, snapshotID <a href="https://pkg.go.dev/builtin#string">string</a>, params <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceSnapshotRestoreParams">InstanceSnapshotRestoreParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Instance">Instance</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
+# Snapshots
+
+Params Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#SnapshotKind">SnapshotKind</a>
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Snapshot">Snapshot</a>
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#SnapshotKind">SnapshotKind</a>
+
+Methods:
+
+- <code title="get /snapshots">client.Snapshots.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#SnapshotService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#SnapshotListParams">SnapshotListParams</a>) (\*[]<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Snapshot">Snapshot</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="delete /snapshots/{snapshotId}">client.Snapshots.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#SnapshotService.Delete">Delete</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, snapshotID <a href="https://pkg.go.dev/builtin#string">string</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
+- <code title="post /snapshots/{snapshotId}/fork">client.Snapshots.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#SnapshotService.Fork">Fork</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, snapshotID <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#SnapshotForkParams">SnapshotForkParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Instance">Instance</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /snapshots/{snapshotId}">client.Snapshots.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#SnapshotService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, snapshotID <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Snapshot">Snapshot</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
 # Volumes
 
 Response Types:

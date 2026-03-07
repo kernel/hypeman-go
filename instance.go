@@ -28,8 +28,9 @@ import (
 // automatically. You should not instantiate this service directly, and instead use
 // the [NewInstanceService] method instead.
 type InstanceService struct {
-	Options []option.RequestOption
-	Volumes InstanceVolumeService
+	Options   []option.RequestOption
+	Volumes   InstanceVolumeService
+	Snapshots InstanceSnapshotService
 }
 
 // NewInstanceService generates a new service that applies the given options to
@@ -39,6 +40,7 @@ func NewInstanceService(opts ...option.RequestOption) (r InstanceService) {
 	r = InstanceService{}
 	r.Options = opts
 	r.Volumes = NewInstanceVolumeService(opts...)
+	r.Snapshots = NewInstanceSnapshotService(opts...)
 	return
 }
 
