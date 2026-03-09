@@ -40,7 +40,7 @@ func TestIngressNewWithOptionalParams(t *testing.T) {
 			RedirectHTTP: hypeman.Bool(true),
 			Tls:          hypeman.Bool(true),
 		}},
-		Metadata: map[string]string{
+		Tags: map[string]string{
 			"team": "backend",
 			"env":  "staging",
 		},
@@ -68,7 +68,7 @@ func TestIngressListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Ingresses.List(context.TODO(), hypeman.IngressListParams{
-		Metadata: map[string]string{
+		Tags: map[string]string{
 			"team": "backend",
 			"env":  "staging",
 		},

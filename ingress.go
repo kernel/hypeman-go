@@ -89,15 +89,15 @@ type Ingress struct {
 	Name string `json:"name" api:"required"`
 	// Routing rules for this ingress
 	Rules []IngressRule `json:"rules" api:"required"`
-	// User-defined key-value metadata tags.
-	Metadata map[string]string `json:"metadata"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
 		CreatedAt   respjson.Field
 		Name        respjson.Field
 		Rules       respjson.Field
-		Metadata    respjson.Field
+		Tags        respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -289,8 +289,8 @@ type IngressNewParams struct {
 	Name string `json:"name" api:"required"`
 	// Routing rules for this ingress
 	Rules []IngressRuleParam `json:"rules,omitzero" api:"required"`
-	// User-defined key-value metadata tags.
-	Metadata map[string]string `json:"metadata,omitzero"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags,omitzero"`
 	paramObj
 }
 
@@ -303,8 +303,8 @@ func (r *IngressNewParams) UnmarshalJSON(data []byte) error {
 }
 
 type IngressListParams struct {
-	// Filter ingresses by metadata key-value pairs.
-	Metadata map[string]string `query:"metadata,omitzero" json:"-"`
+	// Filter ingresses by tag key-value pairs.
+	Tags map[string]string `query:"tags,omitzero" json:"-"`
 	paramObj
 }
 

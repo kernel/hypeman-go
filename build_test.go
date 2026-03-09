@@ -38,8 +38,8 @@ func TestBuildNewWithOptionalParams(t *testing.T) {
 		ImageName:       hypeman.String("image_name"),
 		IsAdminBuild:    hypeman.String("is_admin_build"),
 		MemoryMB:        hypeman.Int(0),
-		Metadata:        hypeman.String("metadata"),
 		Secrets:         hypeman.String("secrets"),
+		Tags:            hypeman.String("tags"),
 		TimeoutSeconds:  hypeman.Int(0),
 	})
 	if err != nil {
@@ -65,7 +65,7 @@ func TestBuildListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Builds.List(context.TODO(), hypeman.BuildListParams{
-		Metadata: map[string]string{
+		Tags: map[string]string{
 			"team": "backend",
 			"env":  "staging",
 		},

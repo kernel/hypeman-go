@@ -149,10 +149,10 @@ type Device struct {
 	VendorID string `json:"vendor_id" api:"required"`
 	// Instance ID if attached
 	AttachedTo string `json:"attached_to" api:"nullable"`
-	// User-defined key-value metadata tags.
-	Metadata map[string]string `json:"metadata"`
 	// Device name (user-provided or auto-generated from PCI address)
 	Name string `json:"name"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
@@ -164,8 +164,8 @@ type Device struct {
 		Type        respjson.Field
 		VendorID    respjson.Field
 		AttachedTo  respjson.Field
-		Metadata    respjson.Field
 		Name        respjson.Field
+		Tags        respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -191,8 +191,8 @@ type DeviceNewParams struct {
 	// Optional globally unique device name. If not provided, a name is auto-generated
 	// from the PCI address (e.g., "pci-0000-a2-00-0")
 	Name param.Opt[string] `json:"name,omitzero"`
-	// User-defined key-value metadata tags.
-	Metadata map[string]string `json:"metadata,omitzero"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags,omitzero"`
 	paramObj
 }
 
@@ -205,8 +205,8 @@ func (r *DeviceNewParams) UnmarshalJSON(data []byte) error {
 }
 
 type DeviceListParams struct {
-	// Filter devices by metadata key-value pairs.
-	Metadata map[string]string `query:"metadata,omitzero" json:"-"`
+	// Filter devices by tag key-value pairs.
+	Tags map[string]string `query:"tags,omitzero" json:"-"`
 	paramObj
 }
 

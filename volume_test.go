@@ -32,7 +32,7 @@ func TestVolumeNewWithOptionalParams(t *testing.T) {
 		Name:   "my-data-volume",
 		SizeGB: 10,
 		ID:     hypeman.String("vol-data-1"),
-		Metadata: map[string]string{
+		Tags: map[string]string{
 			"team": "backend",
 			"env":  "staging",
 		},
@@ -60,7 +60,7 @@ func TestVolumeListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Volumes.List(context.TODO(), hypeman.VolumeListParams{
-		Metadata: map[string]string{
+		Tags: map[string]string{
 			"team": "backend",
 			"env":  "staging",
 		},
@@ -117,7 +117,7 @@ func TestVolumeNewFromArchiveWithOptionalParams(t *testing.T) {
 			Name:   "name",
 			SizeGB: 0,
 			ID:     hypeman.String("id"),
-			Metadata: map[string]string{
+			Tags: map[string]string{
 				"team": "backend",
 				"env":  "staging",
 			},
