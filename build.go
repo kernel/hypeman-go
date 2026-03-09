@@ -128,14 +128,14 @@ type Build struct {
 	// Digest of built image (only when status is ready)
 	ImageDigest string `json:"image_digest" api:"nullable"`
 	// Full image reference (only when status is ready)
-	ImageRef string `json:"image_ref" api:"nullable"`
-	// User-defined key-value metadata tags.
-	Metadata   map[string]string `json:"metadata"`
-	Provenance BuildProvenance   `json:"provenance"`
+	ImageRef   string          `json:"image_ref" api:"nullable"`
+	Provenance BuildProvenance `json:"provenance"`
 	// Position in build queue (only when status is queued)
 	QueuePosition int64 `json:"queue_position" api:"nullable"`
 	// Build start timestamp
 	StartedAt time.Time `json:"started_at" api:"nullable" format:"date-time"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID                respjson.Field
@@ -147,10 +147,10 @@ type Build struct {
 		Error             respjson.Field
 		ImageDigest       respjson.Field
 		ImageRef          respjson.Field
-		Metadata          respjson.Field
 		Provenance        respjson.Field
 		QueuePosition     respjson.Field
 		StartedAt         respjson.Field
+		Tags              respjson.Field
 		ExtraFields       map[string]respjson.Field
 		raw               string
 	} `json:"-"`
@@ -265,12 +265,12 @@ type BuildNewParams struct {
 	IsAdminBuild param.Opt[string] `json:"is_admin_build,omitzero"`
 	// Memory limit for builder VM in MB (default 2048)
 	MemoryMB param.Opt[int64] `json:"memory_mb,omitzero"`
-	// JSON object of metadata tags. Example: {"team":"backend","env":"staging"}
-	Metadata param.Opt[string] `json:"metadata,omitzero"`
 	// JSON array of secret references to inject during build. Each object has "id"
 	// (required) for use with --mount=type=secret,id=... Example: [{"id":
 	// "npm_token"}, {"id": "github_token"}]
 	Secrets param.Opt[string] `json:"secrets,omitzero"`
+	// JSON object of tags. Example: {"team":"backend","env":"staging"}
+	Tags param.Opt[string] `json:"tags,omitzero"`
 	// Build timeout (default 600)
 	TimeoutSeconds param.Opt[int64] `json:"timeout_seconds,omitzero"`
 	paramObj
@@ -295,8 +295,8 @@ func (r BuildNewParams) MarshalMultipart() (data []byte, contentType string, err
 }
 
 type BuildListParams struct {
-	// Filter builds by metadata key-value pairs.
-	Metadata map[string]string `query:"metadata,omitzero" json:"-"`
+	// Filter builds by tag key-value pairs.
+	Tags map[string]string `query:"tags,omitzero" json:"-"`
 	paramObj
 }
 

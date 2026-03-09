@@ -28,7 +28,7 @@ func TestImageNewWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Images.New(context.TODO(), hypeman.ImageNewParams{
 		Name: "docker.io/library/nginx:latest",
-		Metadata: map[string]string{
+		Tags: map[string]string{
 			"team": "backend",
 			"env":  "staging",
 		},
@@ -56,7 +56,7 @@ func TestImageListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Images.List(context.TODO(), hypeman.ImageListParams{
-		Metadata: map[string]string{
+		Tags: map[string]string{
 			"team": "backend",
 			"env":  "staging",
 		},

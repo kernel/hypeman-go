@@ -238,8 +238,6 @@ type Instance struct {
 	//
 	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
 	Hypervisor InstanceHypervisor `json:"hypervisor"`
-	// User-defined key-value metadata tags.
-	Metadata map[string]string `json:"metadata"`
 	// Network configuration of the instance
 	Network InstanceNetwork `json:"network"`
 	// Writable overlay disk size (human-readable)
@@ -252,6 +250,8 @@ type Instance struct {
 	StateError string `json:"state_error" api:"nullable"`
 	// Stop timestamp (RFC3339)
 	StoppedAt time.Time `json:"stopped_at" api:"nullable" format:"date-time"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags"`
 	// Number of virtual CPUs
 	Vcpus int64 `json:"vcpus"`
 	// Volumes attached to the instance
@@ -271,13 +271,13 @@ type Instance struct {
 		HasSnapshot respjson.Field
 		HotplugSize respjson.Field
 		Hypervisor  respjson.Field
-		Metadata    respjson.Field
 		Network     respjson.Field
 		OverlaySize respjson.Field
 		Size        respjson.Field
 		StartedAt   respjson.Field
 		StateError  respjson.Field
 		StoppedAt   respjson.Field
+		Tags        respjson.Field
 		Vcpus       respjson.Field
 		Volumes     respjson.Field
 		ExtraFields map[string]respjson.Field
@@ -567,10 +567,10 @@ type InstanceNewParams struct {
 	//
 	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
 	Hypervisor InstanceNewParamsHypervisor `json:"hypervisor,omitzero"`
-	// User-defined key-value metadata tags.
-	Metadata map[string]string `json:"metadata,omitzero"`
 	// Network configuration for the instance
 	Network InstanceNewParamsNetwork `json:"network,omitzero"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags,omitzero"`
 	// Volumes to attach to the instance at creation time
 	Volumes []VolumeMountParam `json:"volumes,omitzero"`
 	paramObj
@@ -631,15 +631,15 @@ func (r *InstanceNewParamsNetwork) UnmarshalJSON(data []byte) error {
 }
 
 type InstanceListParams struct {
-	// Filter instances by metadata key-value pairs. Uses deepObject style:
-	// ?metadata[team]=backend&metadata[env]=staging Multiple entries are ANDed
-	// together. All specified key-value pairs must match.
-	Metadata map[string]string `query:"metadata,omitzero" json:"-"`
 	// Filter instances by state (e.g., Running, Stopped)
 	//
 	// Any of "Created", "Running", "Paused", "Shutdown", "Stopped", "Standby",
 	// "Unknown".
 	State InstanceListParamsState `query:"state,omitzero" json:"-"`
+	// Filter instances by tag key-value pairs. Uses deepObject style:
+	// ?tags[team]=backend&tags[env]=staging Multiple entries are ANDed together. All
+	// specified key-value pairs must match.
+	Tags map[string]string `query:"tags,omitzero" json:"-"`
 	paramObj
 }
 

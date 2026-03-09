@@ -104,8 +104,8 @@ type Volume struct {
 	SizeGB int64 `json:"size_gb" api:"required"`
 	// List of current attachments (empty if not attached)
 	Attachments []VolumeAttachment `json:"attachments"`
-	// User-defined key-value metadata tags.
-	Metadata map[string]string `json:"metadata"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
@@ -113,7 +113,7 @@ type Volume struct {
 		Name        respjson.Field
 		SizeGB      respjson.Field
 		Attachments respjson.Field
-		Metadata    respjson.Field
+		Tags        respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -155,8 +155,8 @@ type VolumeNewParams struct {
 	SizeGB int64 `json:"size_gb" api:"required"`
 	// Optional custom identifier (auto-generated if not provided)
 	ID param.Opt[string] `json:"id,omitzero"`
-	// User-defined key-value metadata tags.
-	Metadata map[string]string `json:"metadata,omitzero"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags,omitzero"`
 	paramObj
 }
 
@@ -169,8 +169,8 @@ func (r *VolumeNewParams) UnmarshalJSON(data []byte) error {
 }
 
 type VolumeListParams struct {
-	// Filter volumes by metadata key-value pairs.
-	Metadata map[string]string `query:"metadata,omitzero" json:"-"`
+	// Filter volumes by tag key-value pairs.
+	Tags map[string]string `query:"tags,omitzero" json:"-"`
 	paramObj
 }
 
@@ -189,8 +189,8 @@ type VolumeNewFromArchiveParams struct {
 	SizeGB int64 `query:"size_gb" api:"required" json:"-"`
 	// Optional custom volume ID (auto-generated if not provided)
 	ID param.Opt[string] `query:"id,omitzero" json:"-"`
-	// Metadata tags for the created volume.
-	Metadata map[string]string `query:"metadata,omitzero" json:"-"`
+	// Tags for the created volume.
+	Tags map[string]string `query:"tags,omitzero" json:"-"`
 	paramObj
 }
 
