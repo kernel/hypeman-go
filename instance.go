@@ -209,15 +209,16 @@ type Instance struct {
 	// Instance state:
 	//
 	// - Created: VMM created but not started (Cloud Hypervisor native)
-	// - Running: VM is actively running (Cloud Hypervisor native)
+	// - Initializing: VM is running while guest init is still in progress
+	// - Running: Guest program has started and instance is ready
 	// - Paused: VM is paused (Cloud Hypervisor native)
 	// - Shutdown: VM shut down but VMM exists (Cloud Hypervisor native)
 	// - Stopped: No VMM running, no snapshot exists
 	// - Standby: No VMM running, snapshot exists (can be restored)
 	// - Unknown: Failed to determine state (see state_error for details)
 	//
-	// Any of "Created", "Running", "Paused", "Shutdown", "Stopped", "Standby",
-	// "Unknown".
+	// Any of "Created", "Initializing", "Running", "Paused", "Shutdown", "Stopped",
+	// "Standby", "Unknown".
 	State InstanceState `json:"state" api:"required"`
 	// Disk I/O rate limit (human-readable, e.g., "100MB/s")
 	DiskIoBps string `json:"disk_io_bps"`
@@ -294,7 +295,8 @@ func (r *Instance) UnmarshalJSON(data []byte) error {
 // Instance state:
 //
 // - Created: VMM created but not started (Cloud Hypervisor native)
-// - Running: VM is actively running (Cloud Hypervisor native)
+// - Initializing: VM is running while guest init is still in progress
+// - Running: Guest program has started and instance is ready
 // - Paused: VM is paused (Cloud Hypervisor native)
 // - Shutdown: VM shut down but VMM exists (Cloud Hypervisor native)
 // - Stopped: No VMM running, no snapshot exists
@@ -303,13 +305,14 @@ func (r *Instance) UnmarshalJSON(data []byte) error {
 type InstanceState string
 
 const (
-	InstanceStateCreated  InstanceState = "Created"
-	InstanceStateRunning  InstanceState = "Running"
-	InstanceStatePaused   InstanceState = "Paused"
-	InstanceStateShutdown InstanceState = "Shutdown"
-	InstanceStateStopped  InstanceState = "Stopped"
-	InstanceStateStandby  InstanceState = "Standby"
-	InstanceStateUnknown  InstanceState = "Unknown"
+	InstanceStateCreated      InstanceState = "Created"
+	InstanceStateInitializing InstanceState = "Initializing"
+	InstanceStateRunning      InstanceState = "Running"
+	InstanceStatePaused       InstanceState = "Paused"
+	InstanceStateShutdown     InstanceState = "Shutdown"
+	InstanceStateStopped      InstanceState = "Stopped"
+	InstanceStateStandby      InstanceState = "Standby"
+	InstanceStateUnknown      InstanceState = "Unknown"
 )
 
 // GPU information attached to the instance
@@ -633,8 +636,8 @@ func (r *InstanceNewParamsNetwork) UnmarshalJSON(data []byte) error {
 type InstanceListParams struct {
 	// Filter instances by state (e.g., Running, Stopped)
 	//
-	// Any of "Created", "Running", "Paused", "Shutdown", "Stopped", "Standby",
-	// "Unknown".
+	// Any of "Created", "Initializing", "Running", "Paused", "Shutdown", "Stopped",
+	// "Standby", "Unknown".
 	State InstanceListParamsState `query:"state,omitzero" json:"-"`
 	// Filter instances by tag key-value pairs. Uses deepObject style:
 	// ?tags[team]=backend&tags[env]=staging Multiple entries are ANDed together. All
@@ -655,13 +658,14 @@ func (r InstanceListParams) URLQuery() (v url.Values, err error) {
 type InstanceListParamsState string
 
 const (
-	InstanceListParamsStateCreated  InstanceListParamsState = "Created"
-	InstanceListParamsStateRunning  InstanceListParamsState = "Running"
-	InstanceListParamsStatePaused   InstanceListParamsState = "Paused"
-	InstanceListParamsStateShutdown InstanceListParamsState = "Shutdown"
-	InstanceListParamsStateStopped  InstanceListParamsState = "Stopped"
-	InstanceListParamsStateStandby  InstanceListParamsState = "Standby"
-	InstanceListParamsStateUnknown  InstanceListParamsState = "Unknown"
+	InstanceListParamsStateCreated      InstanceListParamsState = "Created"
+	InstanceListParamsStateInitializing InstanceListParamsState = "Initializing"
+	InstanceListParamsStateRunning      InstanceListParamsState = "Running"
+	InstanceListParamsStatePaused       InstanceListParamsState = "Paused"
+	InstanceListParamsStateShutdown     InstanceListParamsState = "Shutdown"
+	InstanceListParamsStateStopped      InstanceListParamsState = "Stopped"
+	InstanceListParamsStateStandby      InstanceListParamsState = "Standby"
+	InstanceListParamsStateUnknown      InstanceListParamsState = "Unknown"
 )
 
 type InstanceForkParams struct {
