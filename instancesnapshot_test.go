@@ -31,11 +31,11 @@ func TestInstanceSnapshotNewWithOptionalParams(t *testing.T) {
 		"id",
 		hypeman.InstanceSnapshotNewParams{
 			Kind: hypeman.SnapshotKindStandby,
-			Metadata: map[string]string{
+			Name: hypeman.String("pre-upgrade"),
+			Tags: map[string]string{
 				"team": "backend",
 				"env":  "staging",
 			},
-			Name: hypeman.String("pre-upgrade"),
 		},
 	)
 	if err != nil {

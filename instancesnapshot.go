@@ -70,8 +70,8 @@ type InstanceSnapshotNewParams struct {
 	// Optional snapshot name (lowercase letters, digits, and dashes only; cannot start
 	// or end with a dash)
 	Name param.Opt[string] `json:"name,omitzero"`
-	// User-defined key-value metadata tags.
-	Metadata map[string]string `json:"metadata,omitzero"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags,omitzero"`
 	paramObj
 }
 

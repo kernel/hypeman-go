@@ -42,10 +42,6 @@ func TestInstanceNewWithOptionalParams(t *testing.T) {
 		},
 		HotplugSize: hypeman.String("2GB"),
 		Hypervisor:  hypeman.InstanceNewParamsHypervisorCloudHypervisor,
-		Metadata: map[string]string{
-			"team": "backend",
-			"env":  "staging",
-		},
 		Network: hypeman.InstanceNewParamsNetwork{
 			BandwidthDownload: hypeman.String("1Gbps"),
 			BandwidthUpload:   hypeman.String("1Gbps"),
@@ -55,7 +51,11 @@ func TestInstanceNewWithOptionalParams(t *testing.T) {
 		Size:              hypeman.String("2GB"),
 		SkipGuestAgent:    hypeman.Bool(false),
 		SkipKernelHeaders: hypeman.Bool(true),
-		Vcpus:             hypeman.Int(2),
+		Tags: map[string]string{
+			"team": "backend",
+			"env":  "staging",
+		},
+		Vcpus: hypeman.Int(2),
 		Volumes: []hypeman.VolumeMountParam{{
 			MountPath:   "/mnt/data",
 			VolumeID:    "vol-abc123",
@@ -87,11 +87,11 @@ func TestInstanceListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Instances.List(context.TODO(), hypeman.InstanceListParams{
-		Metadata: map[string]string{
+		State: hypeman.InstanceListParamsStateCreated,
+		Tags: map[string]string{
 			"team": "backend",
 			"env":  "staging",
 		},
-		State: hypeman.InstanceListParamsStateCreated,
 	})
 	if err != nil {
 		var apierr *hypeman.Error

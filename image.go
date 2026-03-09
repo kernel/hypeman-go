@@ -98,12 +98,12 @@ type Image struct {
 	Env map[string]string `json:"env"`
 	// Error message if status is failed
 	Error string `json:"error" api:"nullable"`
-	// User-defined key-value metadata tags.
-	Metadata map[string]string `json:"metadata"`
 	// Position in build queue (null if not queued)
 	QueuePosition int64 `json:"queue_position" api:"nullable"`
 	// Disk size in bytes (null until ready)
 	SizeBytes int64 `json:"size_bytes" api:"nullable"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags"`
 	// Working directory from container metadata
 	WorkingDir string `json:"working_dir" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -116,9 +116,9 @@ type Image struct {
 		Entrypoint    respjson.Field
 		Env           respjson.Field
 		Error         respjson.Field
-		Metadata      respjson.Field
 		QueuePosition respjson.Field
 		SizeBytes     respjson.Field
+		Tags          respjson.Field
 		WorkingDir    respjson.Field
 		ExtraFields   map[string]respjson.Field
 		raw           string
@@ -145,8 +145,8 @@ const (
 type ImageNewParams struct {
 	// OCI image reference (e.g., docker.io/library/nginx:latest)
 	Name string `json:"name" api:"required"`
-	// User-defined key-value metadata tags.
-	Metadata map[string]string `json:"metadata,omitzero"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags,omitzero"`
 	paramObj
 }
 
@@ -159,8 +159,8 @@ func (r *ImageNewParams) UnmarshalJSON(data []byte) error {
 }
 
 type ImageListParams struct {
-	// Filter images by metadata key-value pairs.
-	Metadata map[string]string `query:"metadata,omitzero" json:"-"`
+	// Filter images by tag key-value pairs.
+	Tags map[string]string `query:"tags,omitzero" json:"-"`
 	paramObj
 }
 

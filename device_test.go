@@ -28,11 +28,11 @@ func TestDeviceNewWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Devices.New(context.TODO(), hypeman.DeviceNewParams{
 		PciAddress: "0000:a2:00.0",
-		Metadata: map[string]string{
+		Name:       hypeman.String("l4-gpu"),
+		Tags: map[string]string{
 			"team": "backend",
 			"env":  "staging",
 		},
-		Name: hypeman.String("l4-gpu"),
 	})
 	if err != nil {
 		var apierr *hypeman.Error
@@ -80,7 +80,7 @@ func TestDeviceListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Devices.List(context.TODO(), hypeman.DeviceListParams{
-		Metadata: map[string]string{
+		Tags: map[string]string{
 			"team": "backend",
 			"env":  "staging",
 		},
