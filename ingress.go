@@ -44,7 +44,7 @@ func (r *IngressService) New(ctx context.Context, body IngressNewParams, opts ..
 	opts = slices.Concat(r.Options, opts)
 	path := "ingresses"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List ingresses
@@ -52,7 +52,7 @@ func (r *IngressService) List(ctx context.Context, query IngressListParams, opts
 	opts = slices.Concat(r.Options, opts)
 	path := "ingresses"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 // Delete ingress
@@ -61,11 +61,11 @@ func (r *IngressService) Delete(ctx context.Context, id string, opts ...option.R
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("ingresses/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Get ingress details
@@ -73,11 +73,11 @@ func (r *IngressService) Get(ctx context.Context, id string, opts ...option.Requ
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("ingresses/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 type Ingress struct {

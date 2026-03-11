@@ -47,7 +47,7 @@ func (r *VolumeService) New(ctx context.Context, body VolumeNewParams, opts ...o
 	opts = slices.Concat(r.Options, opts)
 	path := "volumes"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List volumes
@@ -55,7 +55,7 @@ func (r *VolumeService) List(ctx context.Context, query VolumeListParams, opts .
 	opts = slices.Concat(r.Options, opts)
 	path := "volumes"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 // Delete volume
@@ -64,11 +64,11 @@ func (r *VolumeService) Delete(ctx context.Context, id string, opts ...option.Re
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("volumes/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Creates a new volume pre-populated with content from a tar.gz archive. The
@@ -78,7 +78,7 @@ func (r *VolumeService) NewFromArchive(ctx context.Context, body io.Reader, para
 	opts = append([]option.RequestOption{option.WithRequestBody("application/gzip", body)}, opts...)
 	path := "volumes/from-archive"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, params, &res, opts...)
-	return
+	return res, err
 }
 
 // Get volume details
@@ -86,11 +86,11 @@ func (r *VolumeService) Get(ctx context.Context, id string, opts ...option.Reque
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("volumes/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 type Volume struct {
