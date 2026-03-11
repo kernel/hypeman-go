@@ -43,7 +43,7 @@ func (r *ImageService) New(ctx context.Context, body ImageNewParams, opts ...opt
 	opts = slices.Concat(r.Options, opts)
 	path := "images"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List images
@@ -51,7 +51,7 @@ func (r *ImageService) List(ctx context.Context, query ImageListParams, opts ...
 	opts = slices.Concat(r.Options, opts)
 	path := "images"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 // Delete image
@@ -60,11 +60,11 @@ func (r *ImageService) Delete(ctx context.Context, name string, opts ...option.R
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if name == "" {
 		err = errors.New("missing required name parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("images/%s", name)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Get image details
@@ -72,11 +72,11 @@ func (r *ImageService) Get(ctx context.Context, name string, opts ...option.Requ
 	opts = slices.Concat(r.Options, opts)
 	if name == "" {
 		err = errors.New("missing required name parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("images/%s", name)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 type Image struct {
