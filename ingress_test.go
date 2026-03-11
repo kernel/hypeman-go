@@ -13,7 +13,7 @@ import (
 	"github.com/kernel/hypeman-go/option"
 )
 
-func TestIngressNew(t *testing.T) {
+func TestIngressNewWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -40,6 +40,10 @@ func TestIngressNew(t *testing.T) {
 			RedirectHTTP: hypeman.Bool(true),
 			Tls:          hypeman.Bool(true),
 		}},
+		Tags: map[string]string{
+			"team": "backend",
+			"env":  "staging",
+		},
 	})
 	if err != nil {
 		var apierr *hypeman.Error
@@ -50,7 +54,7 @@ func TestIngressNew(t *testing.T) {
 	}
 }
 
-func TestIngressList(t *testing.T) {
+func TestIngressListWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -63,7 +67,12 @@ func TestIngressList(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Ingresses.List(context.TODO())
+	_, err := client.Ingresses.List(context.TODO(), hypeman.IngressListParams{
+		Tags: map[string]string{
+			"team": "backend",
+			"env":  "staging",
+		},
+	})
 	if err != nil {
 		var apierr *hypeman.Error
 		if errors.As(err, &apierr) {

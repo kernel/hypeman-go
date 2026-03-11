@@ -7,10 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"time"
 
 	"github.com/kernel/hypeman-go/internal/apijson"
+	"github.com/kernel/hypeman-go/internal/apiquery"
 	"github.com/kernel/hypeman-go/internal/requestconfig"
 	"github.com/kernel/hypeman-go/option"
 	"github.com/kernel/hypeman-go/packages/param"
@@ -41,7 +43,7 @@ func (r *DeviceService) New(ctx context.Context, body DeviceNewParams, opts ...o
 	opts = slices.Concat(r.Options, opts)
 	path := "devices"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get device details
@@ -49,19 +51,19 @@ func (r *DeviceService) Get(ctx context.Context, id string, opts ...option.Reque
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("devices/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // List registered devices
-func (r *DeviceService) List(ctx context.Context, opts ...option.RequestOption) (res *[]Device, err error) {
+func (r *DeviceService) List(ctx context.Context, query DeviceListParams, opts ...option.RequestOption) (res *[]Device, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "devices"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
+	return res, err
 }
 
 // Unregister device
@@ -70,11 +72,11 @@ func (r *DeviceService) Delete(ctx context.Context, id string, opts ...option.Re
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("devices/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Discover passthrough-capable devices on host
@@ -82,7 +84,7 @@ func (r *DeviceService) ListAvailable(ctx context.Context, opts ...option.Reques
 	opts = slices.Concat(r.Options, opts)
 	path := "devices/available"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 type AvailableDevice struct {
@@ -149,6 +151,8 @@ type Device struct {
 	AttachedTo string `json:"attached_to" api:"nullable"`
 	// Device name (user-provided or auto-generated from PCI address)
 	Name string `json:"name"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
@@ -161,6 +165,7 @@ type Device struct {
 		VendorID    respjson.Field
 		AttachedTo  respjson.Field
 		Name        respjson.Field
+		Tags        respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -186,6 +191,8 @@ type DeviceNewParams struct {
 	// Optional globally unique device name. If not provided, a name is auto-generated
 	// from the PCI address (e.g., "pci-0000-a2-00-0")
 	Name param.Opt[string] `json:"name,omitzero"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags,omitzero"`
 	paramObj
 }
 
@@ -195,4 +202,18 @@ func (r DeviceNewParams) MarshalJSON() (data []byte, err error) {
 }
 func (r *DeviceNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type DeviceListParams struct {
+	// Filter devices by tag key-value pairs.
+	Tags map[string]string `query:"tags,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [DeviceListParams]'s query parameters as `url.Values`.
+func (r DeviceListParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }

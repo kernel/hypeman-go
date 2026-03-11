@@ -7,10 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"time"
 
 	"github.com/kernel/hypeman-go/internal/apijson"
+	"github.com/kernel/hypeman-go/internal/apiquery"
 	"github.com/kernel/hypeman-go/internal/requestconfig"
 	"github.com/kernel/hypeman-go/option"
 	"github.com/kernel/hypeman-go/packages/param"
@@ -41,15 +43,15 @@ func (r *ImageService) New(ctx context.Context, body ImageNewParams, opts ...opt
 	opts = slices.Concat(r.Options, opts)
 	path := "images"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List images
-func (r *ImageService) List(ctx context.Context, opts ...option.RequestOption) (res *[]Image, err error) {
+func (r *ImageService) List(ctx context.Context, query ImageListParams, opts ...option.RequestOption) (res *[]Image, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "images"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
+	return res, err
 }
 
 // Delete image
@@ -58,11 +60,11 @@ func (r *ImageService) Delete(ctx context.Context, name string, opts ...option.R
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if name == "" {
 		err = errors.New("missing required name parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("images/%s", name)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Get image details
@@ -70,11 +72,11 @@ func (r *ImageService) Get(ctx context.Context, name string, opts ...option.Requ
 	opts = slices.Concat(r.Options, opts)
 	if name == "" {
 		err = errors.New("missing required name parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("images/%s", name)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 type Image struct {
@@ -100,6 +102,8 @@ type Image struct {
 	QueuePosition int64 `json:"queue_position" api:"nullable"`
 	// Disk size in bytes (null until ready)
 	SizeBytes int64 `json:"size_bytes" api:"nullable"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags"`
 	// Working directory from container metadata
 	WorkingDir string `json:"working_dir" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -114,6 +118,7 @@ type Image struct {
 		Error         respjson.Field
 		QueuePosition respjson.Field
 		SizeBytes     respjson.Field
+		Tags          respjson.Field
 		WorkingDir    respjson.Field
 		ExtraFields   map[string]respjson.Field
 		raw           string
@@ -140,6 +145,8 @@ const (
 type ImageNewParams struct {
 	// OCI image reference (e.g., docker.io/library/nginx:latest)
 	Name string `json:"name" api:"required"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags,omitzero"`
 	paramObj
 }
 
@@ -149,4 +156,18 @@ func (r ImageNewParams) MarshalJSON() (data []byte, err error) {
 }
 func (r *ImageNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type ImageListParams struct {
+	// Filter images by tag key-value pairs.
+	Tags map[string]string `query:"tags,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [ImageListParams]'s query parameters as `url.Values`.
+func (r ImageListParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }

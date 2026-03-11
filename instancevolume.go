@@ -39,15 +39,15 @@ func (r *InstanceVolumeService) Attach(ctx context.Context, volumeID string, par
 	opts = slices.Concat(r.Options, opts)
 	if params.ID == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	if volumeID == "" {
 		err = errors.New("missing required volumeId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("instances/%s/volumes/%s", params.ID, volumeID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, params, &res, opts...)
-	return
+	return res, err
 }
 
 // Detach volume from instance
@@ -55,15 +55,15 @@ func (r *InstanceVolumeService) Detach(ctx context.Context, volumeID string, bod
 	opts = slices.Concat(r.Options, opts)
 	if body.ID == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	if volumeID == "" {
 		err = errors.New("missing required volumeId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("instances/%s/volumes/%s", body.ID, volumeID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 type InstanceVolumeAttachParams struct {

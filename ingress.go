@@ -8,10 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"time"
 
 	"github.com/kernel/hypeman-go/internal/apijson"
+	"github.com/kernel/hypeman-go/internal/apiquery"
 	"github.com/kernel/hypeman-go/internal/requestconfig"
 	"github.com/kernel/hypeman-go/option"
 	"github.com/kernel/hypeman-go/packages/param"
@@ -42,15 +44,15 @@ func (r *IngressService) New(ctx context.Context, body IngressNewParams, opts ..
 	opts = slices.Concat(r.Options, opts)
 	path := "ingresses"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List ingresses
-func (r *IngressService) List(ctx context.Context, opts ...option.RequestOption) (res *[]Ingress, err error) {
+func (r *IngressService) List(ctx context.Context, query IngressListParams, opts ...option.RequestOption) (res *[]Ingress, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "ingresses"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
+	return res, err
 }
 
 // Delete ingress
@@ -59,11 +61,11 @@ func (r *IngressService) Delete(ctx context.Context, id string, opts ...option.R
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("ingresses/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Get ingress details
@@ -71,11 +73,11 @@ func (r *IngressService) Get(ctx context.Context, id string, opts ...option.Requ
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("ingresses/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 type Ingress struct {
@@ -87,12 +89,15 @@ type Ingress struct {
 	Name string `json:"name" api:"required"`
 	// Routing rules for this ingress
 	Rules []IngressRule `json:"rules" api:"required"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
 		CreatedAt   respjson.Field
 		Name        respjson.Field
 		Rules       respjson.Field
+		Tags        respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -284,6 +289,8 @@ type IngressNewParams struct {
 	Name string `json:"name" api:"required"`
 	// Routing rules for this ingress
 	Rules []IngressRuleParam `json:"rules,omitzero" api:"required"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags,omitzero"`
 	paramObj
 }
 
@@ -293,4 +300,18 @@ func (r IngressNewParams) MarshalJSON() (data []byte, err error) {
 }
 func (r *IngressNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type IngressListParams struct {
+	// Filter ingresses by tag key-value pairs.
+	Tags map[string]string `query:"tags,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [IngressListParams]'s query parameters as `url.Values`.
+func (r IngressListParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }

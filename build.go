@@ -49,15 +49,15 @@ func (r *BuildService) New(ctx context.Context, body BuildNewParams, opts ...opt
 	opts = slices.Concat(r.Options, opts)
 	path := "builds"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List builds
-func (r *BuildService) List(ctx context.Context, opts ...option.RequestOption) (res *[]Build, err error) {
+func (r *BuildService) List(ctx context.Context, query BuildListParams, opts ...option.RequestOption) (res *[]Build, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "builds"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
+	return res, err
 }
 
 // Cancel build
@@ -66,11 +66,11 @@ func (r *BuildService) Cancel(ctx context.Context, id string, opts ...option.Req
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("builds/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Streams build events as Server-Sent Events. Events include:
@@ -89,7 +89,7 @@ func (r *BuildService) EventsStreaming(ctx context.Context, id string, query Bui
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "text/event-stream")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return ssestream.NewStream[BuildEvent](nil, err)
 	}
 	path := fmt.Sprintf("builds/%s/events", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &raw, opts...)
@@ -101,11 +101,11 @@ func (r *BuildService) Get(ctx context.Context, id string, opts ...option.Reques
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("builds/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 type Build struct {
@@ -134,6 +134,8 @@ type Build struct {
 	QueuePosition int64 `json:"queue_position" api:"nullable"`
 	// Build start timestamp
 	StartedAt time.Time `json:"started_at" api:"nullable" format:"date-time"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID                respjson.Field
@@ -148,6 +150,7 @@ type Build struct {
 		Provenance        respjson.Field
 		QueuePosition     respjson.Field
 		StartedAt         respjson.Field
+		Tags              respjson.Field
 		ExtraFields       map[string]respjson.Field
 		raw               string
 	} `json:"-"`
@@ -266,6 +269,8 @@ type BuildNewParams struct {
 	// (required) for use with --mount=type=secret,id=... Example: [{"id":
 	// "npm_token"}, {"id": "github_token"}]
 	Secrets param.Opt[string] `json:"secrets,omitzero"`
+	// JSON object of tags. Example: {"team":"backend","env":"staging"}
+	Tags param.Opt[string] `json:"tags,omitzero"`
 	// Build timeout (default 600)
 	TimeoutSeconds param.Opt[int64] `json:"timeout_seconds,omitzero"`
 	paramObj
@@ -287,6 +292,20 @@ func (r BuildNewParams) MarshalMultipart() (data []byte, contentType string, err
 		return nil, "", err
 	}
 	return buf.Bytes(), writer.FormDataContentType(), nil
+}
+
+type BuildListParams struct {
+	// Filter builds by tag key-value pairs.
+	Tags map[string]string `query:"tags,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [BuildListParams]'s query parameters as `url.Values`.
+func (r BuildListParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }
 
 type BuildEventsParams struct {

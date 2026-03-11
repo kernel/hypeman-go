@@ -28,8 +28,9 @@ import (
 // automatically. You should not instantiate this service directly, and instead use
 // the [NewInstanceService] method instead.
 type InstanceService struct {
-	Options []option.RequestOption
-	Volumes InstanceVolumeService
+	Options   []option.RequestOption
+	Volumes   InstanceVolumeService
+	Snapshots InstanceSnapshotService
 }
 
 // NewInstanceService generates a new service that applies the given options to
@@ -39,6 +40,7 @@ func NewInstanceService(opts ...option.RequestOption) (r InstanceService) {
 	r = InstanceService{}
 	r.Options = opts
 	r.Volumes = NewInstanceVolumeService(opts...)
+	r.Snapshots = NewInstanceSnapshotService(opts...)
 	return
 }
 
@@ -47,7 +49,7 @@ func (r *InstanceService) New(ctx context.Context, body InstanceNewParams, opts 
 	opts = slices.Concat(r.Options, opts)
 	path := "instances"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List instances
@@ -55,7 +57,7 @@ func (r *InstanceService) List(ctx context.Context, query InstanceListParams, op
 	opts = slices.Concat(r.Options, opts)
 	path := "instances"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 // Stop and delete instance
@@ -64,11 +66,11 @@ func (r *InstanceService) Delete(ctx context.Context, id string, opts ...option.
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("instances/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Fork an instance from stopped, standby, or running (with from_running=true)
@@ -76,11 +78,11 @@ func (r *InstanceService) Fork(ctx context.Context, id string, body InstanceFork
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("instances/%s/fork", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get instance details
@@ -88,11 +90,11 @@ func (r *InstanceService) Get(ctx context.Context, id string, opts ...option.Req
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("instances/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Streams instance logs as Server-Sent Events. Use the `source` parameter to
@@ -113,7 +115,7 @@ func (r *InstanceService) LogsStreaming(ctx context.Context, id string, query In
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "text/event-stream")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return ssestream.NewStream[string](nil, err)
 	}
 	path := fmt.Sprintf("instances/%s/logs", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &raw, opts...)
@@ -125,11 +127,11 @@ func (r *InstanceService) Restore(ctx context.Context, id string, opts ...option
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("instances/%s/restore", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Put instance in standby (pause, snapshot, delete VMM)
@@ -137,11 +139,11 @@ func (r *InstanceService) Standby(ctx context.Context, id string, opts ...option
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("instances/%s/standby", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Start a stopped instance
@@ -149,11 +151,11 @@ func (r *InstanceService) Start(ctx context.Context, id string, body InstanceSta
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("instances/%s/start", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Returns information about a path in the guest filesystem. Useful for checking if
@@ -162,11 +164,11 @@ func (r *InstanceService) Stat(ctx context.Context, id string, query InstanceSta
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("instances/%s/stat", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 // Returns real-time resource utilization statistics for a running VM instance.
@@ -176,11 +178,11 @@ func (r *InstanceService) Stats(ctx context.Context, id string, opts ...option.R
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("instances/%s/stats", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Stop instance (graceful shutdown)
@@ -188,11 +190,11 @@ func (r *InstanceService) Stop(ctx context.Context, id string, opts ...option.Re
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("instances/%s/stop", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 type Instance struct {
@@ -207,15 +209,16 @@ type Instance struct {
 	// Instance state:
 	//
 	// - Created: VMM created but not started (Cloud Hypervisor native)
-	// - Running: VM is actively running (Cloud Hypervisor native)
+	// - Initializing: VM is running while guest init is still in progress
+	// - Running: Guest program has started and instance is ready
 	// - Paused: VM is paused (Cloud Hypervisor native)
 	// - Shutdown: VM shut down but VMM exists (Cloud Hypervisor native)
 	// - Stopped: No VMM running, no snapshot exists
 	// - Standby: No VMM running, snapshot exists (can be restored)
 	// - Unknown: Failed to determine state (see state_error for details)
 	//
-	// Any of "Created", "Running", "Paused", "Shutdown", "Stopped", "Standby",
-	// "Unknown".
+	// Any of "Created", "Initializing", "Running", "Paused", "Shutdown", "Stopped",
+	// "Standby", "Unknown".
 	State InstanceState `json:"state" api:"required"`
 	// Disk I/O rate limit (human-readable, e.g., "100MB/s")
 	DiskIoBps string `json:"disk_io_bps"`
@@ -236,8 +239,6 @@ type Instance struct {
 	//
 	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
 	Hypervisor InstanceHypervisor `json:"hypervisor"`
-	// User-defined key-value metadata
-	Metadata map[string]string `json:"metadata"`
 	// Network configuration of the instance
 	Network InstanceNetwork `json:"network"`
 	// Writable overlay disk size (human-readable)
@@ -250,6 +251,8 @@ type Instance struct {
 	StateError string `json:"state_error" api:"nullable"`
 	// Stop timestamp (RFC3339)
 	StoppedAt time.Time `json:"stopped_at" api:"nullable" format:"date-time"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags"`
 	// Number of virtual CPUs
 	Vcpus int64 `json:"vcpus"`
 	// Volumes attached to the instance
@@ -269,13 +272,13 @@ type Instance struct {
 		HasSnapshot respjson.Field
 		HotplugSize respjson.Field
 		Hypervisor  respjson.Field
-		Metadata    respjson.Field
 		Network     respjson.Field
 		OverlaySize respjson.Field
 		Size        respjson.Field
 		StartedAt   respjson.Field
 		StateError  respjson.Field
 		StoppedAt   respjson.Field
+		Tags        respjson.Field
 		Vcpus       respjson.Field
 		Volumes     respjson.Field
 		ExtraFields map[string]respjson.Field
@@ -292,7 +295,8 @@ func (r *Instance) UnmarshalJSON(data []byte) error {
 // Instance state:
 //
 // - Created: VMM created but not started (Cloud Hypervisor native)
-// - Running: VM is actively running (Cloud Hypervisor native)
+// - Initializing: VM is running while guest init is still in progress
+// - Running: Guest program has started and instance is ready
 // - Paused: VM is paused (Cloud Hypervisor native)
 // - Shutdown: VM shut down but VMM exists (Cloud Hypervisor native)
 // - Stopped: No VMM running, no snapshot exists
@@ -301,13 +305,14 @@ func (r *Instance) UnmarshalJSON(data []byte) error {
 type InstanceState string
 
 const (
-	InstanceStateCreated  InstanceState = "Created"
-	InstanceStateRunning  InstanceState = "Running"
-	InstanceStatePaused   InstanceState = "Paused"
-	InstanceStateShutdown InstanceState = "Shutdown"
-	InstanceStateStopped  InstanceState = "Stopped"
-	InstanceStateStandby  InstanceState = "Standby"
-	InstanceStateUnknown  InstanceState = "Unknown"
+	InstanceStateCreated      InstanceState = "Created"
+	InstanceStateInitializing InstanceState = "Initializing"
+	InstanceStateRunning      InstanceState = "Running"
+	InstanceStatePaused       InstanceState = "Paused"
+	InstanceStateShutdown     InstanceState = "Shutdown"
+	InstanceStateStopped      InstanceState = "Stopped"
+	InstanceStateStandby      InstanceState = "Standby"
+	InstanceStateUnknown      InstanceState = "Unknown"
 )
 
 // GPU information attached to the instance
@@ -565,10 +570,10 @@ type InstanceNewParams struct {
 	//
 	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
 	Hypervisor InstanceNewParamsHypervisor `json:"hypervisor,omitzero"`
-	// User-defined key-value metadata for the instance
-	Metadata map[string]string `json:"metadata,omitzero"`
 	// Network configuration for the instance
 	Network InstanceNewParamsNetwork `json:"network,omitzero"`
+	// User-defined key-value tags.
+	Tags map[string]string `json:"tags,omitzero"`
 	// Volumes to attach to the instance at creation time
 	Volumes []VolumeMountParam `json:"volumes,omitzero"`
 	paramObj
@@ -629,15 +634,15 @@ func (r *InstanceNewParamsNetwork) UnmarshalJSON(data []byte) error {
 }
 
 type InstanceListParams struct {
-	// Filter instances by metadata key-value pairs. Uses deepObject style:
-	// ?metadata[team]=backend&metadata[env]=staging Multiple entries are ANDed
-	// together. All specified key-value pairs must match.
-	Metadata map[string]string `query:"metadata,omitzero" json:"-"`
 	// Filter instances by state (e.g., Running, Stopped)
 	//
-	// Any of "Created", "Running", "Paused", "Shutdown", "Stopped", "Standby",
-	// "Unknown".
+	// Any of "Created", "Initializing", "Running", "Paused", "Shutdown", "Stopped",
+	// "Standby", "Unknown".
 	State InstanceListParamsState `query:"state,omitzero" json:"-"`
+	// Filter instances by tag key-value pairs. Uses deepObject style:
+	// ?tags[team]=backend&tags[env]=staging Multiple entries are ANDed together. All
+	// specified key-value pairs must match.
+	Tags map[string]string `query:"tags,omitzero" json:"-"`
 	paramObj
 }
 
@@ -653,13 +658,14 @@ func (r InstanceListParams) URLQuery() (v url.Values, err error) {
 type InstanceListParamsState string
 
 const (
-	InstanceListParamsStateCreated  InstanceListParamsState = "Created"
-	InstanceListParamsStateRunning  InstanceListParamsState = "Running"
-	InstanceListParamsStatePaused   InstanceListParamsState = "Paused"
-	InstanceListParamsStateShutdown InstanceListParamsState = "Shutdown"
-	InstanceListParamsStateStopped  InstanceListParamsState = "Stopped"
-	InstanceListParamsStateStandby  InstanceListParamsState = "Standby"
-	InstanceListParamsStateUnknown  InstanceListParamsState = "Unknown"
+	InstanceListParamsStateCreated      InstanceListParamsState = "Created"
+	InstanceListParamsStateInitializing InstanceListParamsState = "Initializing"
+	InstanceListParamsStateRunning      InstanceListParamsState = "Running"
+	InstanceListParamsStatePaused       InstanceListParamsState = "Paused"
+	InstanceListParamsStateShutdown     InstanceListParamsState = "Shutdown"
+	InstanceListParamsStateStopped      InstanceListParamsState = "Stopped"
+	InstanceListParamsStateStandby      InstanceListParamsState = "Standby"
+	InstanceListParamsStateUnknown      InstanceListParamsState = "Unknown"
 )
 
 type InstanceForkParams struct {

@@ -29,7 +29,7 @@ func TestBuildNewWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Builds.New(context.TODO(), hypeman.BuildNewParams{
-		Source:          io.Reader(bytes.NewBuffer([]byte("some file contents"))),
+		Source:          io.Reader(bytes.NewBuffer([]byte("Example data"))),
 		BaseImageDigest: hypeman.String("base_image_digest"),
 		CacheScope:      hypeman.String("cache_scope"),
 		CPUs:            hypeman.Int(0),
@@ -39,6 +39,7 @@ func TestBuildNewWithOptionalParams(t *testing.T) {
 		IsAdminBuild:    hypeman.String("is_admin_build"),
 		MemoryMB:        hypeman.Int(0),
 		Secrets:         hypeman.String("secrets"),
+		Tags:            hypeman.String("tags"),
 		TimeoutSeconds:  hypeman.Int(0),
 	})
 	if err != nil {
@@ -50,7 +51,7 @@ func TestBuildNewWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestBuildList(t *testing.T) {
+func TestBuildListWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -63,7 +64,12 @@ func TestBuildList(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Builds.List(context.TODO())
+	_, err := client.Builds.List(context.TODO(), hypeman.BuildListParams{
+		Tags: map[string]string{
+			"team": "backend",
+			"env":  "staging",
+		},
+	})
 	if err != nil {
 		var apierr *hypeman.Error
 		if errors.As(err, &apierr) {

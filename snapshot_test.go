@@ -13,7 +13,7 @@ import (
 	"github.com/kernel/hypeman-go/option"
 )
 
-func TestDeviceNewWithOptionalParams(t *testing.T) {
+func TestSnapshotListWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -26,9 +26,10 @@ func TestDeviceNewWithOptionalParams(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Devices.New(context.TODO(), hypeman.DeviceNewParams{
-		PciAddress: "0000:a2:00.0",
-		Name:       hypeman.String("l4-gpu"),
+	_, err := client.Snapshots.List(context.TODO(), hypeman.SnapshotListParams{
+		Kind:             hypeman.SnapshotKindStandby,
+		Name:             hypeman.String("name"),
+		SourceInstanceID: hypeman.String("source_instance_id"),
 		Tags: map[string]string{
 			"team": "backend",
 			"env":  "staging",
@@ -43,7 +44,7 @@ func TestDeviceNewWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestDeviceGet(t *testing.T) {
+func TestSnapshotDelete(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -56,7 +57,7 @@ func TestDeviceGet(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Devices.Get(context.TODO(), "id")
+	err := client.Snapshots.Delete(context.TODO(), "snapshotId")
 	if err != nil {
 		var apierr *hypeman.Error
 		if errors.As(err, &apierr) {
@@ -66,7 +67,7 @@ func TestDeviceGet(t *testing.T) {
 	}
 }
 
-func TestDeviceListWithOptionalParams(t *testing.T) {
+func TestSnapshotForkWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -79,12 +80,15 @@ func TestDeviceListWithOptionalParams(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Devices.List(context.TODO(), hypeman.DeviceListParams{
-		Tags: map[string]string{
-			"team": "backend",
-			"env":  "staging",
+	_, err := client.Snapshots.Fork(
+		context.TODO(),
+		"snapshotId",
+		hypeman.SnapshotForkParams{
+			Name:             "nginx-from-snap",
+			TargetHypervisor: hypeman.SnapshotForkParamsTargetHypervisorCloudHypervisor,
+			TargetState:      hypeman.SnapshotForkParamsTargetStateRunning,
 		},
-	})
+	)
 	if err != nil {
 		var apierr *hypeman.Error
 		if errors.As(err, &apierr) {
@@ -94,7 +98,7 @@ func TestDeviceListWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestDeviceDelete(t *testing.T) {
+func TestSnapshotGet(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -107,30 +111,7 @@ func TestDeviceDelete(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	err := client.Devices.Delete(context.TODO(), "id")
-	if err != nil {
-		var apierr *hypeman.Error
-		if errors.As(err, &apierr) {
-			t.Log(string(apierr.DumpRequest(true)))
-		}
-		t.Fatalf("err should be nil: %s", err.Error())
-	}
-}
-
-func TestDeviceListAvailable(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
-	baseURL := "http://localhost:4010"
-	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
-		baseURL = envURL
-	}
-	if !testutil.CheckTestServer(t, baseURL) {
-		return
-	}
-	client := hypeman.NewClient(
-		option.WithBaseURL(baseURL),
-		option.WithAPIKey("My API Key"),
-	)
-	_, err := client.Devices.ListAvailable(context.TODO())
+	_, err := client.Snapshots.Get(context.TODO(), "snapshotId")
 	if err != nil {
 		var apierr *hypeman.Error
 		if errors.As(err, &apierr) {
