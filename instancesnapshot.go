@@ -39,11 +39,11 @@ func (r *InstanceSnapshotService) New(ctx context.Context, id string, body Insta
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("instances/%s/snapshots", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Restore an instance from a snapshot in-place
@@ -51,15 +51,15 @@ func (r *InstanceSnapshotService) Restore(ctx context.Context, snapshotID string
 	opts = slices.Concat(r.Options, opts)
 	if params.ID == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	if snapshotID == "" {
 		err = errors.New("missing required snapshotId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("instances/%s/snapshots/%s/restore", params.ID, snapshotID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, params, &res, opts...)
-	return
+	return res, err
 }
 
 type InstanceSnapshotNewParams struct {

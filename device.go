@@ -43,7 +43,7 @@ func (r *DeviceService) New(ctx context.Context, body DeviceNewParams, opts ...o
 	opts = slices.Concat(r.Options, opts)
 	path := "devices"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get device details
@@ -51,11 +51,11 @@ func (r *DeviceService) Get(ctx context.Context, id string, opts ...option.Reque
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("devices/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // List registered devices
@@ -63,7 +63,7 @@ func (r *DeviceService) List(ctx context.Context, query DeviceListParams, opts .
 	opts = slices.Concat(r.Options, opts)
 	path := "devices"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 // Unregister device
@@ -72,11 +72,11 @@ func (r *DeviceService) Delete(ctx context.Context, id string, opts ...option.Re
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("devices/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Discover passthrough-capable devices on host
@@ -84,7 +84,7 @@ func (r *DeviceService) ListAvailable(ctx context.Context, opts ...option.Reques
 	opts = slices.Concat(r.Options, opts)
 	path := "devices/available"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 type AvailableDevice struct {

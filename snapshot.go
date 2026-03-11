@@ -43,7 +43,7 @@ func (r *SnapshotService) List(ctx context.Context, query SnapshotListParams, op
 	opts = slices.Concat(r.Options, opts)
 	path := "snapshots"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 // Delete a snapshot
@@ -52,11 +52,11 @@ func (r *SnapshotService) Delete(ctx context.Context, snapshotID string, opts ..
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if snapshotID == "" {
 		err = errors.New("missing required snapshotId parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("snapshots/%s", snapshotID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Fork a new instance from a snapshot
@@ -64,11 +64,11 @@ func (r *SnapshotService) Fork(ctx context.Context, snapshotID string, body Snap
 	opts = slices.Concat(r.Options, opts)
 	if snapshotID == "" {
 		err = errors.New("missing required snapshotId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("snapshots/%s/fork", snapshotID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get snapshot details
@@ -76,11 +76,11 @@ func (r *SnapshotService) Get(ctx context.Context, snapshotID string, opts ...op
 	opts = slices.Concat(r.Options, opts)
 	if snapshotID == "" {
 		err = errors.New("missing required snapshotId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("snapshots/%s", snapshotID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 type Snapshot struct {
