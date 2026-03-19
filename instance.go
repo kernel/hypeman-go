@@ -557,6 +557,11 @@ type InstanceNewParams struct {
 	// Override image CMD (like docker run <image> <command>). Omit to use image
 	// default.
 	Cmd []string `json:"cmd,omitzero"`
+	// Host-managed credential brokering policies keyed by guest-visible env var name.
+	// Those guest env vars receive mock placeholder values, while the real values
+	// remain host-scoped in the request `env` map and are only materialized on the
+	// mediated egress path according to each credential's `source` and `inject` rules.
+	Credentials map[string]InstanceNewParamsCredential `json:"credentials,omitzero"`
 	// Device IDs or names to attach for GPU/PCI passthrough
 	Devices []string `json:"devices,omitzero"`
 	// Override image entrypoint (like docker run --entrypoint). Omit to use image
@@ -584,6 +589,77 @@ func (r InstanceNewParams) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *InstanceNewParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties Inject, Source are required.
+type InstanceNewParamsCredential struct {
+	Inject []InstanceNewParamsCredentialInject `json:"inject,omitzero" api:"required"`
+	Source InstanceNewParamsCredentialSource   `json:"source,omitzero" api:"required"`
+	paramObj
+}
+
+func (r InstanceNewParamsCredential) MarshalJSON() (data []byte, err error) {
+	type shadow InstanceNewParamsCredential
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *InstanceNewParamsCredential) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The property As is required.
+type InstanceNewParamsCredentialInject struct {
+	// Current v1 transform shape. Header templating is supported now; other transform
+	// types (for example request signing) can be added in future revisions.
+	As InstanceNewParamsCredentialInjectAs `json:"as,omitzero" api:"required"`
+	// Optional destination host patterns (`api.example.com`, `*.example.com`). Omit to
+	// allow injection on all destinations.
+	Hosts []string `json:"hosts,omitzero"`
+	paramObj
+}
+
+func (r InstanceNewParamsCredentialInject) MarshalJSON() (data []byte, err error) {
+	type shadow InstanceNewParamsCredentialInject
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *InstanceNewParamsCredentialInject) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Current v1 transform shape. Header templating is supported now; other transform
+// types (for example request signing) can be added in future revisions.
+//
+// The properties Format, Header are required.
+type InstanceNewParamsCredentialInjectAs struct {
+	// Template that must include `${value}`.
+	Format string `json:"format" api:"required"`
+	// Header name to set/mutate for matching outbound requests.
+	Header string `json:"header" api:"required"`
+	paramObj
+}
+
+func (r InstanceNewParamsCredentialInjectAs) MarshalJSON() (data []byte, err error) {
+	type shadow InstanceNewParamsCredentialInjectAs
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *InstanceNewParamsCredentialInjectAs) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The property Env is required.
+type InstanceNewParamsCredentialSource struct {
+	// Name of the real credential in the request `env` map. The guest-visible env var
+	// key can receive a mock placeholder, while the mediated egress path resolves that
+	// placeholder back to this real value only on the host.
+	Env string `json:"env" api:"required"`
+	paramObj
+}
+
+func (r InstanceNewParamsCredentialSource) MarshalJSON() (data []byte, err error) {
+	type shadow InstanceNewParamsCredentialSource
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *InstanceNewParamsCredentialSource) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -622,6 +698,10 @@ type InstanceNewParamsNetwork struct {
 	BandwidthUpload param.Opt[string] `json:"bandwidth_upload,omitzero"`
 	// Whether to attach instance to the default network
 	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// Host-mediated outbound network policy. Omit this object, or set
+	// `enabled: false`, to preserve normal direct outbound networking when
+	// `network.enabled` is true.
+	Egress InstanceNewParamsNetworkEgress `json:"egress,omitzero"`
 	paramObj
 }
 
@@ -631,6 +711,51 @@ func (r InstanceNewParamsNetwork) MarshalJSON() (data []byte, err error) {
 }
 func (r *InstanceNewParamsNetwork) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+// Host-mediated outbound network policy. Omit this object, or set
+// `enabled: false`, to preserve normal direct outbound networking when
+// `network.enabled` is true.
+type InstanceNewParamsNetworkEgress struct {
+	// Whether to enable the mediated egress path. When false or omitted, the instance
+	// keeps normal direct outbound networking and host-managed credential rewriting is
+	// disabled.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// Egress enforcement policy applied when mediation is enabled.
+	Enforcement InstanceNewParamsNetworkEgressEnforcement `json:"enforcement,omitzero"`
+	paramObj
+}
+
+func (r InstanceNewParamsNetworkEgress) MarshalJSON() (data []byte, err error) {
+	type shadow InstanceNewParamsNetworkEgress
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *InstanceNewParamsNetworkEgress) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Egress enforcement policy applied when mediation is enabled.
+type InstanceNewParamsNetworkEgressEnforcement struct {
+	// `all` (default) rejects direct non-mediated TCP egress from the VM, while
+	// `http_https_only` rejects direct egress only on TCP ports 80 and 443.
+	//
+	// Any of "all", "http_https_only".
+	Mode string `json:"mode,omitzero"`
+	paramObj
+}
+
+func (r InstanceNewParamsNetworkEgressEnforcement) MarshalJSON() (data []byte, err error) {
+	type shadow InstanceNewParamsNetworkEgressEnforcement
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *InstanceNewParamsNetworkEgressEnforcement) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[InstanceNewParamsNetworkEgressEnforcement](
+		"mode", "all", "http_https_only",
+	)
 }
 
 type InstanceListParams struct {
