@@ -27,9 +27,23 @@ func TestInstanceNewWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Instances.New(context.TODO(), hypeman.InstanceNewParams{
-		Image:      "docker.io/library/alpine:latest",
-		Name:       "my-workload-1",
-		Cmd:        []string{"echo", "hello"},
+		Image: "docker.io/library/alpine:latest",
+		Name:  "my-workload-1",
+		Cmd:   []string{"echo", "hello"},
+		Credentials: map[string]hypeman.InstanceNewParamsCredential{
+			"OUTBOUND_OPENAI_KEY": {
+				Inject: []hypeman.InstanceNewParamsCredentialInject{{
+					As: hypeman.InstanceNewParamsCredentialInjectAs{
+						Format: "Bearer ${value}",
+						Header: "Authorization",
+					},
+					Hosts: []string{"api.openai.com", "*.openai.com"},
+				}},
+				Source: hypeman.InstanceNewParamsCredentialSource{
+					Env: "OUTBOUND_OPENAI_KEY",
+				},
+			},
+		},
 		Devices:    []string{"l4-gpu"},
 		DiskIoBps:  hypeman.String("100MB/s"),
 		Entrypoint: []string{"/bin/sh", "-c"},
@@ -45,7 +59,13 @@ func TestInstanceNewWithOptionalParams(t *testing.T) {
 		Network: hypeman.InstanceNewParamsNetwork{
 			BandwidthDownload: hypeman.String("1Gbps"),
 			BandwidthUpload:   hypeman.String("1Gbps"),
-			Enabled:           hypeman.Bool(true),
+			Egress: hypeman.InstanceNewParamsNetworkEgress{
+				Enabled: hypeman.Bool(true),
+				Enforcement: hypeman.InstanceNewParamsNetworkEgressEnforcement{
+					Mode: "all",
+				},
+			},
+			Enabled: hypeman.Bool(true),
 		},
 		OverlaySize:       hypeman.String("20GB"),
 		Size:              hypeman.String("2GB"),
