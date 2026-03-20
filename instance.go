@@ -52,6 +52,20 @@ func (r *InstanceService) New(ctx context.Context, body InstanceNewParams, opts 
 	return res, err
 }
 
+// Update mutable properties of a running instance. Currently supports updating
+// only the environment variables referenced by existing credential policies,
+// enabling secret/key rotation without instance restart.
+func (r *InstanceService) Update(ctx context.Context, id string, body InstanceUpdateParams, opts ...option.RequestOption) (res *Instance, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("instances/%s", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
+	return res, err
+}
+
 // List instances
 func (r *InstanceService) List(ctx context.Context, query InstanceListParams, opts ...option.RequestOption) (res *[]Instance, err error) {
 	opts = slices.Concat(r.Options, opts)
@@ -756,6 +770,22 @@ func init() {
 	apijson.RegisterFieldValidator[InstanceNewParamsNetworkEgressEnforcement](
 		"mode", "all", "http_https_only",
 	)
+}
+
+type InstanceUpdateParams struct {
+	// Environment variables to update (merged with existing). Only keys referenced by
+	// the instance's existing credential `source.env` bindings are accepted. Use this
+	// to rotate real credential values without restarting the VM.
+	Env map[string]string `json:"env,omitzero"`
+	paramObj
+}
+
+func (r InstanceUpdateParams) MarshalJSON() (data []byte, err error) {
+	type shadow InstanceUpdateParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *InstanceUpdateParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type InstanceListParams struct {
