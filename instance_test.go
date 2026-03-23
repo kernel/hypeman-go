@@ -11,6 +11,7 @@ import (
 	"github.com/kernel/hypeman-go"
 	"github.com/kernel/hypeman-go/internal/testutil"
 	"github.com/kernel/hypeman-go/option"
+	"github.com/kernel/hypeman-go/shared"
 )
 
 func TestInstanceNewWithOptionalParams(t *testing.T) {
@@ -71,6 +72,13 @@ func TestInstanceNewWithOptionalParams(t *testing.T) {
 		Size:              hypeman.String("2GB"),
 		SkipGuestAgent:    hypeman.Bool(false),
 		SkipKernelHeaders: hypeman.Bool(true),
+		SnapshotPolicy: hypeman.SnapshotPolicyParam{
+			Compression: shared.SnapshotCompressionConfigParam{
+				Enabled:   true,
+				Algorithm: shared.SnapshotCompressionConfigAlgorithmZstd,
+				Level:     hypeman.Int(1),
+			},
+		},
 		Tags: map[string]string{
 			"team": "backend",
 			"env":  "staging",
@@ -253,7 +261,7 @@ func TestInstanceRestore(t *testing.T) {
 	}
 }
 
-func TestInstanceStandby(t *testing.T) {
+func TestInstanceStandbyWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -266,7 +274,17 @@ func TestInstanceStandby(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Instances.Standby(context.TODO(), "id")
+	_, err := client.Instances.Standby(
+		context.TODO(),
+		"id",
+		hypeman.InstanceStandbyParams{
+			Compression: shared.SnapshotCompressionConfigParam{
+				Enabled:   true,
+				Algorithm: shared.SnapshotCompressionConfigAlgorithmZstd,
+				Level:     hypeman.Int(1),
+			},
+		},
+	)
 	if err != nil {
 		var apierr *hypeman.Error
 		if errors.As(err, &apierr) {
