@@ -4,12 +4,16 @@ package hypeman
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"slices"
+	"time"
 
 	"github.com/kernel/hypeman-go/internal/apijson"
+	shimjson "github.com/kernel/hypeman-go/internal/encoding/json"
 	"github.com/kernel/hypeman-go/internal/requestconfig"
 	"github.com/kernel/hypeman-go/option"
+	"github.com/kernel/hypeman-go/packages/param"
 	"github.com/kernel/hypeman-go/packages/respjson"
 )
 
@@ -39,6 +43,16 @@ func (r *ResourceService) Get(ctx context.Context, opts ...option.RequestOption)
 	opts = slices.Concat(r.Options, opts)
 	path := "resources"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
+// Requests runtime balloon inflation across reclaim-eligible guests. The same
+// planner used by host-pressure reclaim is applied, including protected floors and
+// per-VM step limits.
+func (r *ResourceService) ReclaimMemory(ctx context.Context, body ResourceReclaimMemoryParams, opts ...option.RequestOption) (res *MemoryReclaimResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "resources/memory/reclaim"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
 
@@ -130,6 +144,113 @@ type GPUResourceStatusMode string
 const (
 	GPUResourceStatusModeVgpu        GPUResourceStatusMode = "vgpu"
 	GPUResourceStatusModePassthrough GPUResourceStatusMode = "passthrough"
+)
+
+type MemoryReclaimAction struct {
+	AppliedReclaimBytes int64 `json:"applied_reclaim_bytes" api:"required"`
+	AssignedMemoryBytes int64 `json:"assigned_memory_bytes" api:"required"`
+	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
+	Hypervisor                     MemoryReclaimActionHypervisor `json:"hypervisor" api:"required"`
+	InstanceID                     string                        `json:"instance_id" api:"required"`
+	InstanceName                   string                        `json:"instance_name" api:"required"`
+	PlannedTargetGuestMemoryBytes  int64                         `json:"planned_target_guest_memory_bytes" api:"required"`
+	PreviousTargetGuestMemoryBytes int64                         `json:"previous_target_guest_memory_bytes" api:"required"`
+	ProtectedFloorBytes            int64                         `json:"protected_floor_bytes" api:"required"`
+	// Result of this VM's reclaim step.
+	Status                 string `json:"status" api:"required"`
+	TargetGuestMemoryBytes int64  `json:"target_guest_memory_bytes" api:"required"`
+	// Error message when status is error or unsupported.
+	Error string `json:"error"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AppliedReclaimBytes            respjson.Field
+		AssignedMemoryBytes            respjson.Field
+		Hypervisor                     respjson.Field
+		InstanceID                     respjson.Field
+		InstanceName                   respjson.Field
+		PlannedTargetGuestMemoryBytes  respjson.Field
+		PreviousTargetGuestMemoryBytes respjson.Field
+		ProtectedFloorBytes            respjson.Field
+		Status                         respjson.Field
+		TargetGuestMemoryBytes         respjson.Field
+		Error                          respjson.Field
+		ExtraFields                    map[string]respjson.Field
+		raw                            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MemoryReclaimAction) RawJSON() string { return r.JSON.raw }
+func (r *MemoryReclaimAction) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type MemoryReclaimActionHypervisor string
+
+const (
+	MemoryReclaimActionHypervisorCloudHypervisor MemoryReclaimActionHypervisor = "cloud-hypervisor"
+	MemoryReclaimActionHypervisorFirecracker     MemoryReclaimActionHypervisor = "firecracker"
+	MemoryReclaimActionHypervisorQemu            MemoryReclaimActionHypervisor = "qemu"
+	MemoryReclaimActionHypervisorVz              MemoryReclaimActionHypervisor = "vz"
+)
+
+// The property ReclaimBytes is required.
+type MemoryReclaimRequestParam struct {
+	// Total bytes of guest memory to reclaim across eligible VMs.
+	ReclaimBytes int64 `json:"reclaim_bytes" api:"required"`
+	// Calculate a reclaim plan without applying balloon changes or creating a hold.
+	DryRun param.Opt[bool] `json:"dry_run,omitzero"`
+	// How long to keep the reclaim hold active (Go duration string). Defaults to 5m
+	// when omitted.
+	HoldFor param.Opt[string] `json:"hold_for,omitzero"`
+	// Optional operator-provided reason attached to logs and traces.
+	Reason param.Opt[string] `json:"reason,omitzero"`
+	paramObj
+}
+
+func (r MemoryReclaimRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow MemoryReclaimRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *MemoryReclaimRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type MemoryReclaimResponse struct {
+	Actions             []MemoryReclaimAction `json:"actions" api:"required"`
+	AppliedReclaimBytes int64                 `json:"applied_reclaim_bytes" api:"required"`
+	HostAvailableBytes  int64                 `json:"host_available_bytes" api:"required"`
+	// Any of "healthy", "pressure".
+	HostPressureState     MemoryReclaimResponseHostPressureState `json:"host_pressure_state" api:"required"`
+	PlannedReclaimBytes   int64                                  `json:"planned_reclaim_bytes" api:"required"`
+	RequestedReclaimBytes int64                                  `json:"requested_reclaim_bytes" api:"required"`
+	// When the current manual reclaim hold expires.
+	HoldUntil time.Time `json:"hold_until" format:"date-time"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Actions               respjson.Field
+		AppliedReclaimBytes   respjson.Field
+		HostAvailableBytes    respjson.Field
+		HostPressureState     respjson.Field
+		PlannedReclaimBytes   respjson.Field
+		RequestedReclaimBytes respjson.Field
+		HoldUntil             respjson.Field
+		ExtraFields           map[string]respjson.Field
+		raw                   string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MemoryReclaimResponse) RawJSON() string { return r.JSON.raw }
+func (r *MemoryReclaimResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type MemoryReclaimResponseHostPressureState string
+
+const (
+	MemoryReclaimResponseHostPressureStateHealthy  MemoryReclaimResponseHostPressureState = "healthy"
+	MemoryReclaimResponseHostPressureStatePressure MemoryReclaimResponseHostPressureState = "pressure"
 )
 
 // Physical GPU available for passthrough
@@ -255,4 +376,16 @@ type Resources struct {
 func (r Resources) RawJSON() string { return r.JSON.raw }
 func (r *Resources) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type ResourceReclaimMemoryParams struct {
+	MemoryReclaimRequest MemoryReclaimRequestParam
+	paramObj
+}
+
+func (r ResourceReclaimMemoryParams) MarshalJSON() (data []byte, err error) {
+	return shimjson.Marshal(r.MemoryReclaimRequest)
+}
+func (r *ResourceReclaimMemoryParams) UnmarshalJSON(data []byte) error {
+	return json.Unmarshal(data, &r.MemoryReclaimRequest)
 }

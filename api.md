@@ -137,11 +137,17 @@ Methods:
 
 # Resources
 
+Params Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#MemoryReclaimRequestParam">MemoryReclaimRequestParam</a>
+
 Response Types:
 
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#DiskBreakdown">DiskBreakdown</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#GPUProfile">GPUProfile</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#GPUResourceStatus">GPUResourceStatus</a>
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#MemoryReclaimAction">MemoryReclaimAction</a>
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#MemoryReclaimResponse">MemoryReclaimResponse</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#PassthroughDevice">PassthroughDevice</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#ResourceAllocation">ResourceAllocation</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#ResourceStatus">ResourceStatus</a>
@@ -150,6 +156,7 @@ Response Types:
 Methods:
 
 - <code title="get /resources">client.Resources.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#ResourceService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Resources">Resources</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="post /resources/memory/reclaim">client.Resources.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#ResourceService.ReclaimMemory">ReclaimMemory</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#ResourceReclaimMemoryParams">ResourceReclaimMemoryParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#MemoryReclaimResponse">MemoryReclaimResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
 # Builds
 
