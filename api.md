@@ -1,3 +1,11 @@
+# Shared Params Types
+
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go/shared">shared</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go/shared#SnapshotCompressionConfigParam">SnapshotCompressionConfigParam</a>
+
+# Shared Response Types
+
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go/shared">shared</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go/shared#SnapshotCompressionConfig">SnapshotCompressionConfig</a>
+
 # Health
 
 Response Types:
@@ -25,6 +33,7 @@ Methods:
 
 Params Types:
 
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#SnapshotPolicyParam">SnapshotPolicyParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#VolumeMountParam">VolumeMountParam</a>
 
 Response Types:
@@ -32,6 +41,7 @@ Response Types:
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Instance">Instance</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceStats">InstanceStats</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#PathInfo">PathInfo</a>
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#SnapshotPolicy">SnapshotPolicy</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#VolumeMount">VolumeMount</a>
 
 Methods:
@@ -44,7 +54,7 @@ Methods:
 - <code title="get /instances/{id}">client.Instances.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Instance">Instance</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="get /instances/{id}/logs">client.Instances.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceService.Logs">Logs</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, query <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceLogsParams">InstanceLogsParams</a>) (\*<a href="https://pkg.go.dev/builtin#string">string</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="post /instances/{id}/restore">client.Instances.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceService.Restore">Restore</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Instance">Instance</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
-- <code title="post /instances/{id}/standby">client.Instances.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceService.Standby">Standby</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Instance">Instance</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="post /instances/{id}/standby">client.Instances.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceService.Standby">Standby</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceStandbyParams">InstanceStandbyParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Instance">Instance</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="post /instances/{id}/start">client.Instances.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceService.Start">Start</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceStartParams">InstanceStartParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Instance">Instance</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="get /instances/{id}/stat">client.Instances.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceService.Stat">Stat</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, query <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceStatParams">InstanceStatParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#PathInfo">PathInfo</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="get /instances/{id}/stats">client.Instances.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceService.Stats">Stats</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceStats">InstanceStats</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>

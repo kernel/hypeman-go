@@ -11,6 +11,7 @@ import (
 	"github.com/kernel/hypeman-go"
 	"github.com/kernel/hypeman-go/internal/testutil"
 	"github.com/kernel/hypeman-go/option"
+	"github.com/kernel/hypeman-go/shared"
 )
 
 func TestInstanceSnapshotNewWithOptionalParams(t *testing.T) {
@@ -31,6 +32,11 @@ func TestInstanceSnapshotNewWithOptionalParams(t *testing.T) {
 		"id",
 		hypeman.InstanceSnapshotNewParams{
 			Kind: hypeman.SnapshotKindStandby,
+			Compression: shared.SnapshotCompressionConfigParam{
+				Enabled:   true,
+				Algorithm: shared.SnapshotCompressionConfigAlgorithmZstd,
+				Level:     hypeman.Int(1),
+			},
 			Name: hypeman.String("pre-upgrade"),
 			Tags: map[string]string{
 				"team": "backend",
