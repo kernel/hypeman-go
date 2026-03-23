@@ -13,6 +13,7 @@ import (
 	"github.com/kernel/hypeman-go/internal/requestconfig"
 	"github.com/kernel/hypeman-go/option"
 	"github.com/kernel/hypeman-go/packages/param"
+	"github.com/kernel/hypeman-go/shared"
 )
 
 // InstanceSnapshotService contains methods and other services that help with
@@ -70,6 +71,9 @@ type InstanceSnapshotNewParams struct {
 	// Optional snapshot name (lowercase letters, digits, and dashes only; cannot start
 	// or end with a dash)
 	Name param.Opt[string] `json:"name,omitzero"`
+	// Compression settings to use for this snapshot. Overrides instance and server
+	// defaults.
+	Compression shared.SnapshotCompressionConfigParam `json:"compression,omitzero"`
 	// User-defined key-value tags.
 	Tags map[string]string `json:"tags,omitzero"`
 	paramObj

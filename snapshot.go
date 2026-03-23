@@ -17,6 +17,7 @@ import (
 	"github.com/kernel/hypeman-go/option"
 	"github.com/kernel/hypeman-go/packages/param"
 	"github.com/kernel/hypeman-go/packages/respjson"
+	"github.com/kernel/hypeman-go/shared"
 )
 
 // SnapshotService contains methods and other services that help with interacting
@@ -102,23 +103,39 @@ type Snapshot struct {
 	SourceInstanceID string `json:"source_instance_id" api:"required"`
 	// Source instance name at snapshot creation time
 	SourceInstanceName string `json:"source_instance_name" api:"required"`
+	// Compressed memory payload size in bytes
+	CompressedSizeBytes int64                            `json:"compressed_size_bytes" api:"nullable"`
+	Compression         shared.SnapshotCompressionConfig `json:"compression"`
+	// Compression error message when compression_state is error
+	CompressionError string `json:"compression_error" api:"nullable"`
+	// Compression status of the snapshot payload memory file
+	//
+	// Any of "none", "compressing", "compressed", "error".
+	CompressionState SnapshotCompressionState `json:"compression_state"`
 	// Optional human-readable snapshot name (unique per source instance)
 	Name string `json:"name" api:"nullable"`
 	// User-defined key-value tags.
 	Tags map[string]string `json:"tags"`
+	// Uncompressed memory payload size in bytes
+	UncompressedSizeBytes int64 `json:"uncompressed_size_bytes" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID                 respjson.Field
-		CreatedAt          respjson.Field
-		Kind               respjson.Field
-		SizeBytes          respjson.Field
-		SourceHypervisor   respjson.Field
-		SourceInstanceID   respjson.Field
-		SourceInstanceName respjson.Field
-		Name               respjson.Field
-		Tags               respjson.Field
-		ExtraFields        map[string]respjson.Field
-		raw                string
+		ID                    respjson.Field
+		CreatedAt             respjson.Field
+		Kind                  respjson.Field
+		SizeBytes             respjson.Field
+		SourceHypervisor      respjson.Field
+		SourceInstanceID      respjson.Field
+		SourceInstanceName    respjson.Field
+		CompressedSizeBytes   respjson.Field
+		Compression           respjson.Field
+		CompressionError      respjson.Field
+		CompressionState      respjson.Field
+		Name                  respjson.Field
+		Tags                  respjson.Field
+		UncompressedSizeBytes respjson.Field
+		ExtraFields           map[string]respjson.Field
+		raw                   string
 	} `json:"-"`
 }
 
@@ -136,6 +153,16 @@ const (
 	SnapshotSourceHypervisorFirecracker     SnapshotSourceHypervisor = "firecracker"
 	SnapshotSourceHypervisorQemu            SnapshotSourceHypervisor = "qemu"
 	SnapshotSourceHypervisorVz              SnapshotSourceHypervisor = "vz"
+)
+
+// Compression status of the snapshot payload memory file
+type SnapshotCompressionState string
+
+const (
+	SnapshotCompressionStateNone        SnapshotCompressionState = "none"
+	SnapshotCompressionStateCompressing SnapshotCompressionState = "compressing"
+	SnapshotCompressionStateCompressed  SnapshotCompressionState = "compressed"
+	SnapshotCompressionStateError       SnapshotCompressionState = "error"
 )
 
 // Snapshot capture kind

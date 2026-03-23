@@ -19,6 +19,7 @@ import (
 	"github.com/kernel/hypeman-go/packages/param"
 	"github.com/kernel/hypeman-go/packages/respjson"
 	"github.com/kernel/hypeman-go/packages/ssestream"
+	"github.com/kernel/hypeman-go/shared"
 )
 
 // InstanceService contains methods and other services that help with interacting
@@ -149,14 +150,14 @@ func (r *InstanceService) Restore(ctx context.Context, id string, opts ...option
 }
 
 // Put instance in standby (pause, snapshot, delete VMM)
-func (r *InstanceService) Standby(ctx context.Context, id string, opts ...option.RequestOption) (res *Instance, err error) {
+func (r *InstanceService) Standby(ctx context.Context, id string, body InstanceStandbyParams, opts ...option.RequestOption) (res *Instance, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
 	path := fmt.Sprintf("instances/%s/standby", id)
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
 
@@ -258,7 +259,8 @@ type Instance struct {
 	// Writable overlay disk size (human-readable)
 	OverlaySize string `json:"overlay_size"`
 	// Base memory size (human-readable)
-	Size string `json:"size"`
+	Size           string         `json:"size"`
+	SnapshotPolicy SnapshotPolicy `json:"snapshot_policy"`
 	// Start timestamp (RFC3339)
 	StartedAt time.Time `json:"started_at" api:"nullable" format:"date-time"`
 	// Error message if state couldn't be determined (only set when state is Unknown)
@@ -273,30 +275,31 @@ type Instance struct {
 	Volumes []VolumeMount `json:"volumes"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID          respjson.Field
-		CreatedAt   respjson.Field
-		Image       respjson.Field
-		Name        respjson.Field
-		State       respjson.Field
-		DiskIoBps   respjson.Field
-		Env         respjson.Field
-		ExitCode    respjson.Field
-		ExitMessage respjson.Field
-		GPU         respjson.Field
-		HasSnapshot respjson.Field
-		HotplugSize respjson.Field
-		Hypervisor  respjson.Field
-		Network     respjson.Field
-		OverlaySize respjson.Field
-		Size        respjson.Field
-		StartedAt   respjson.Field
-		StateError  respjson.Field
-		StoppedAt   respjson.Field
-		Tags        respjson.Field
-		Vcpus       respjson.Field
-		Volumes     respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		ID             respjson.Field
+		CreatedAt      respjson.Field
+		Image          respjson.Field
+		Name           respjson.Field
+		State          respjson.Field
+		DiskIoBps      respjson.Field
+		Env            respjson.Field
+		ExitCode       respjson.Field
+		ExitMessage    respjson.Field
+		GPU            respjson.Field
+		HasSnapshot    respjson.Field
+		HotplugSize    respjson.Field
+		Hypervisor     respjson.Field
+		Network        respjson.Field
+		OverlaySize    respjson.Field
+		Size           respjson.Field
+		SnapshotPolicy respjson.Field
+		StartedAt      respjson.Field
+		StateError     respjson.Field
+		StoppedAt      respjson.Field
+		Tags           respjson.Field
+		Vcpus          respjson.Field
+		Volumes        respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
 	} `json:"-"`
 }
 
@@ -478,6 +481,44 @@ func (r *PathInfo) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type SnapshotPolicy struct {
+	Compression shared.SnapshotCompressionConfig `json:"compression"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Compression respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SnapshotPolicy) RawJSON() string { return r.JSON.raw }
+func (r *SnapshotPolicy) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this SnapshotPolicy to a SnapshotPolicyParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// SnapshotPolicyParam.Overrides()
+func (r SnapshotPolicy) ToParam() SnapshotPolicyParam {
+	return param.Override[SnapshotPolicyParam](json.RawMessage(r.RawJSON()))
+}
+
+type SnapshotPolicyParam struct {
+	Compression shared.SnapshotCompressionConfigParam `json:"compression,omitzero"`
+	paramObj
+}
+
+func (r SnapshotPolicyParam) MarshalJSON() (data []byte, err error) {
+	type shadow SnapshotPolicyParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SnapshotPolicyParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type VolumeMount struct {
 	// Path where volume is mounted in the guest
 	MountPath string `json:"mount_path" api:"required"`
@@ -591,6 +632,9 @@ type InstanceNewParams struct {
 	Hypervisor InstanceNewParamsHypervisor `json:"hypervisor,omitzero"`
 	// Network configuration for the instance
 	Network InstanceNewParamsNetwork `json:"network,omitzero"`
+	// Snapshot compression policy for this instance. Controls compression settings
+	// applied when creating snapshots or entering standby.
+	SnapshotPolicy SnapshotPolicyParam `json:"snapshot_policy,omitzero"`
 	// User-defined key-value tags.
 	Tags map[string]string `json:"tags,omitzero"`
 	// Volumes to attach to the instance at creation time
@@ -894,6 +938,19 @@ const (
 	InstanceLogsParamsSourceVmm     InstanceLogsParamsSource = "vmm"
 	InstanceLogsParamsSourceHypeman InstanceLogsParamsSource = "hypeman"
 )
+
+type InstanceStandbyParams struct {
+	Compression shared.SnapshotCompressionConfigParam `json:"compression,omitzero"`
+	paramObj
+}
+
+func (r InstanceStandbyParams) MarshalJSON() (data []byte, err error) {
+	type shadow InstanceStandbyParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *InstanceStandbyParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
 
 type InstanceStartParams struct {
 	// Override image CMD for this run. Omit to keep previous value.
