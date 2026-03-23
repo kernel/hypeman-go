@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.16.0 (2026-03-23)
+
+Full Changelog: [v0.15.0...v0.16.0](https://github.com/kernel/hypeman-go/compare/v0.15.0...v0.16.0)
+
+### Features
+
+* add active ballooning reclaim controller ([b8ecb54](https://github.com/kernel/hypeman-go/commit/b8ecb541b8237d1283a05422eed6e30ff2b0536f))
+* Add always-on /metrics endpoint with dual pull/push telemetry ([0b3751a](https://github.com/kernel/hypeman-go/commit/0b3751a37068dca3771ad04fc1af876c5e52384f))
+* Add optional snapshot compression defaults and standby integration ([b6d9ab3](https://github.com/kernel/hypeman-go/commit/b6d9ab3d0b4ffdd7d56153464387ed9e603d8d0a))
+* add optional VM egress MITM proxy with mock-secret header rewriting ([e8b721c](https://github.com/kernel/hypeman-go/commit/e8b721cbc709af739827929839e443981d636233))
+* Add strict metadata tags across mutable resources ([8b5543e](https://github.com/kernel/hypeman-go/commit/8b5543e6f8fed7062d28c37fa35ba031e14c6f79))
+* Rename tag fields from metadata to tags ([2f8e29e](https://github.com/kernel/hypeman-go/commit/2f8e29e033b44a8a492ec9a3bdcbc44cabf2eb11))
+* Snapshot ([c4a0fbb](https://github.com/kernel/hypeman-go/commit/c4a0fbb34ee2b325229f6a02ae9cc3c57346788d))
+* support updating egress proxy secret envs for key rotation ([96b3209](https://github.com/kernel/hypeman-go/commit/96b32092d707499c6a962d89a3530b413be4ccab))
+
+
+### Chores
+
+* **ci:** skip uploading artifacts on stainless-internal branches ([0d9d654](https://github.com/kernel/hypeman-go/commit/0d9d654f8074387de55f5befe709477c6905deaa))
+* **internal:** codegen related update ([e6a6702](https://github.com/kernel/hypeman-go/commit/e6a6702ba1fcf355cf64a60fd016393e5474e9bc))
+* **internal:** minor cleanup ([1917d6d](https://github.com/kernel/hypeman-go/commit/1917d6de179a6a36358598cf3b1f6d4ebbe7f034))
+* **internal:** tweak CI branches ([6dc7e68](https://github.com/kernel/hypeman-go/commit/6dc7e68725e65b75bd7c2aa07d4427909ad2365c))
+* **internal:** use explicit returns ([923db74](https://github.com/kernel/hypeman-go/commit/923db74ba5750233d429a5e98dc6cb5fb0e806ba))
+* **internal:** use explicit returns in more places ([16131b8](https://github.com/kernel/hypeman-go/commit/16131b802aa3f5a2b32d298d179966a440f53af5))
+* update placeholder string ([bea84ac](https://github.com/kernel/hypeman-go/commit/bea84ac19f1178f378cc6ba8bad07a26848b5492))
+
 ## 0.15.0 (2026-03-04)
 
 Full Changelog: [v0.14.0...v0.15.0](https://github.com/kernel/hypeman-go/compare/v0.14.0...v0.15.0)
