@@ -365,4 +365,4 @@ jobs:
           - Streaming methods may have different CLI implementations (e.g., build events are streamed internally)
           - Even if no coverage gaps are found, still create a PR for the SDK version bump
           - Ensure code compiles before pushing
-          " --model gpt-5.3-codex-high --force --output-format=text
+          " --model ${{ secrets.CURSOR_PREFERRED_MODEL }} --force --output-format=text
