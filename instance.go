@@ -29,9 +29,10 @@ import (
 // automatically. You should not instantiate this service directly, and instead use
 // the [NewInstanceService] method instead.
 type InstanceService struct {
-	Options   []option.RequestOption
-	Volumes   InstanceVolumeService
-	Snapshots InstanceSnapshotService
+	Options          []option.RequestOption
+	Volumes          InstanceVolumeService
+	Snapshots        InstanceSnapshotService
+	SnapshotSchedule InstanceSnapshotScheduleService
 }
 
 // NewInstanceService generates a new service that applies the given options to
@@ -42,6 +43,7 @@ func NewInstanceService(opts ...option.RequestOption) (r InstanceService) {
 	r.Options = opts
 	r.Volumes = NewInstanceVolumeService(opts...)
 	r.Snapshots = NewInstanceSnapshotService(opts...)
+	r.SnapshotSchedule = NewInstanceSnapshotScheduleService(opts...)
 	return
 }
 
@@ -481,6 +483,27 @@ func (r *PathInfo) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// The properties Interval, Retention are required.
+type SetSnapshotScheduleRequestParam struct {
+	// Snapshot interval (Go duration format, minimum 1m).
+	Interval string `json:"interval" api:"required"`
+	// At least one of max_count or max_age must be provided.
+	Retention SnapshotScheduleRetentionParam `json:"retention,omitzero" api:"required"`
+	// Optional prefix for auto-generated scheduled snapshot names (max 47 chars).
+	NamePrefix param.Opt[string] `json:"name_prefix,omitzero"`
+	// User-defined key-value tags.
+	Metadata map[string]string `json:"metadata,omitzero"`
+	paramObj
+}
+
+func (r SetSnapshotScheduleRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow SetSnapshotScheduleRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SetSnapshotScheduleRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type SnapshotPolicy struct {
 	Compression shared.SnapshotCompressionConfig `json:"compression"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -516,6 +539,103 @@ func (r SnapshotPolicyParam) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *SnapshotPolicyParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SnapshotSchedule struct {
+	// Schedule creation timestamp.
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
+	// Source instance ID.
+	InstanceID string `json:"instance_id" api:"required"`
+	// Snapshot interval (Go duration format).
+	Interval string `json:"interval" api:"required"`
+	// Next scheduled run time.
+	NextRunAt time.Time `json:"next_run_at" api:"required" format:"date-time"`
+	// Automatic cleanup policy for scheduled snapshots.
+	Retention SnapshotScheduleRetention `json:"retention" api:"required"`
+	// Schedule update timestamp.
+	UpdatedAt time.Time `json:"updated_at" api:"required" format:"date-time"`
+	// Last schedule run error, if any.
+	LastError string `json:"last_error" api:"nullable"`
+	// Last schedule execution time.
+	LastRunAt time.Time `json:"last_run_at" api:"nullable" format:"date-time"`
+	// Snapshot ID produced by the last successful run.
+	LastSnapshotID string `json:"last_snapshot_id" api:"nullable"`
+	// User-defined key-value tags.
+	Metadata map[string]string `json:"metadata"`
+	// Optional prefix used for generated scheduled snapshot names.
+	NamePrefix string `json:"name_prefix" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CreatedAt      respjson.Field
+		InstanceID     respjson.Field
+		Interval       respjson.Field
+		NextRunAt      respjson.Field
+		Retention      respjson.Field
+		UpdatedAt      respjson.Field
+		LastError      respjson.Field
+		LastRunAt      respjson.Field
+		LastSnapshotID respjson.Field
+		Metadata       respjson.Field
+		NamePrefix     respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SnapshotSchedule) RawJSON() string { return r.JSON.raw }
+func (r *SnapshotSchedule) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Automatic cleanup policy for scheduled snapshots.
+type SnapshotScheduleRetention struct {
+	// Delete scheduled snapshots older than this duration (Go duration format).
+	MaxAge string `json:"max_age"`
+	// Keep at most this many scheduled snapshots for the instance (0 disables
+	// count-based cleanup).
+	MaxCount int64 `json:"max_count"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		MaxAge      respjson.Field
+		MaxCount    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SnapshotScheduleRetention) RawJSON() string { return r.JSON.raw }
+func (r *SnapshotScheduleRetention) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this SnapshotScheduleRetention to a
+// SnapshotScheduleRetentionParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// SnapshotScheduleRetentionParam.Overrides()
+func (r SnapshotScheduleRetention) ToParam() SnapshotScheduleRetentionParam {
+	return param.Override[SnapshotScheduleRetentionParam](json.RawMessage(r.RawJSON()))
+}
+
+// Automatic cleanup policy for scheduled snapshots.
+type SnapshotScheduleRetentionParam struct {
+	// Delete scheduled snapshots older than this duration (Go duration format).
+	MaxAge param.Opt[string] `json:"max_age,omitzero"`
+	// Keep at most this many scheduled snapshots for the instance (0 disables
+	// count-based cleanup).
+	MaxCount param.Opt[int64] `json:"max_count,omitzero"`
+	paramObj
+}
+
+func (r SnapshotScheduleRetentionParam) MarshalJSON() (data []byte, err error) {
+	type shadow SnapshotScheduleRetentionParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SnapshotScheduleRetentionParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
