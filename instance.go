@@ -214,6 +214,21 @@ func (r *InstanceService) Stop(ctx context.Context, id string, opts ...option.Re
 	return res, err
 }
 
+// Blocks until the instance reaches the specified target state, the timeout
+// expires, or the instance enters a terminal/error state. Useful for avoiding
+// client-side polling when waiting for state transitions (e.g. waiting for an
+// instance to become Running).
+func (r *InstanceService) Wait(ctx context.Context, id string, query InstanceWaitParams, opts ...option.RequestOption) (res *WaitForStateResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("instances/%s/wait", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
+	return res, err
+}
+
 type Instance struct {
 	// Auto-generated unique identifier (CUID2 format)
 	ID string `json:"id" api:"required"`
@@ -702,6 +717,46 @@ func (r *VolumeMountParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type WaitForStateResponse struct {
+	// Current instance state when the wait completed
+	//
+	// Any of "Created", "Initializing", "Running", "Paused", "Shutdown", "Stopped",
+	// "Standby", "Unknown".
+	State WaitForStateResponseState `json:"state" api:"required"`
+	// Whether the timeout expired before the target state was reached
+	TimedOut bool `json:"timed_out" api:"required"`
+	// Error message when derived state is Unknown
+	StateError string `json:"state_error" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		State       respjson.Field
+		TimedOut    respjson.Field
+		StateError  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r WaitForStateResponse) RawJSON() string { return r.JSON.raw }
+func (r *WaitForStateResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Current instance state when the wait completed
+type WaitForStateResponseState string
+
+const (
+	WaitForStateResponseStateCreated      WaitForStateResponseState = "Created"
+	WaitForStateResponseStateInitializing WaitForStateResponseState = "Initializing"
+	WaitForStateResponseStateRunning      WaitForStateResponseState = "Running"
+	WaitForStateResponseStatePaused       WaitForStateResponseState = "Paused"
+	WaitForStateResponseStateShutdown     WaitForStateResponseState = "Shutdown"
+	WaitForStateResponseStateStopped      WaitForStateResponseState = "Stopped"
+	WaitForStateResponseStateStandby      WaitForStateResponseState = "Standby"
+	WaitForStateResponseStateUnknown      WaitForStateResponseState = "Unknown"
+)
+
 type InstanceNewParams struct {
 	// OCI image reference
 	Image string `json:"image" api:"required"`
@@ -1103,3 +1158,37 @@ func (r InstanceStatParams) URLQuery() (v url.Values, err error) {
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
 }
+
+type InstanceWaitParams struct {
+	// Target state to wait for
+	//
+	// Any of "Created", "Initializing", "Running", "Paused", "Shutdown", "Stopped",
+	// "Standby", "Unknown".
+	State InstanceWaitParamsState `query:"state,omitzero" api:"required" json:"-"`
+	// Maximum duration to wait (Go duration format, e.g. "30s", "2m"). Capped at 5
+	// minutes. Defaults to 60 seconds.
+	Timeout param.Opt[string] `query:"timeout,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [InstanceWaitParams]'s query parameters as `url.Values`.
+func (r InstanceWaitParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
+}
+
+// Target state to wait for
+type InstanceWaitParamsState string
+
+const (
+	InstanceWaitParamsStateCreated      InstanceWaitParamsState = "Created"
+	InstanceWaitParamsStateInitializing InstanceWaitParamsState = "Initializing"
+	InstanceWaitParamsStateRunning      InstanceWaitParamsState = "Running"
+	InstanceWaitParamsStatePaused       InstanceWaitParamsState = "Paused"
+	InstanceWaitParamsStateShutdown     InstanceWaitParamsState = "Shutdown"
+	InstanceWaitParamsStateStopped      InstanceWaitParamsState = "Stopped"
+	InstanceWaitParamsStateStandby      InstanceWaitParamsState = "Standby"
+	InstanceWaitParamsStateUnknown      InstanceWaitParamsState = "Unknown"
+)
