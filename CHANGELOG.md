@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.17.0 (2026-03-28)
+
+Full Changelog: [v0.16.0...v0.17.0](https://github.com/kernel/hypeman-go/compare/v0.16.0...v0.17.0)
+
+### Features
+
+* Add scheduled instance snapshots with retention cleanup ([f0d4d52](https://github.com/kernel/hypeman-go/commit/f0d4d52bf563ca828cba5f31f6a0c913d4dba4f8))
+* Add waitForState endpoint for blocking state transitions ([d6cea17](https://github.com/kernel/hypeman-go/commit/d6cea176033845f13c0dcbe79c0a8150c5a87d94))
+* **internal:** support comma format in multipart form encoding ([e6abba9](https://github.com/kernel/hypeman-go/commit/e6abba95be9eebf3a437b3ca371cd5f30795da02))
+
+
+### Bug Fixes
+
+* prevent duplicate ? in query params ([6bc4417](https://github.com/kernel/hypeman-go/commit/6bc44177b7bd0d7b03702664d573cc160cc11a75))
+
+
+### Chores
+
+* **ci:** skip lint on metadata-only changes ([e3c8b1f](https://github.com/kernel/hypeman-go/commit/e3c8b1f0943858b91f196db4889a27f0d626a6e4))
+* **ci:** support opting out of skipping builds on metadata-only commits ([c5320fd](https://github.com/kernel/hypeman-go/commit/c5320fdaa5ad7a7e223590fd2664ee4fdb35fa6f))
+* **client:** fix multipart serialisation of Default() fields ([0abcf13](https://github.com/kernel/hypeman-go/commit/0abcf13ab96198afe17152d6653309ad5aecbb97))
+* **internal:** support default value struct tag ([e9226b4](https://github.com/kernel/hypeman-go/commit/e9226b48b553d83aad20295d320ca976f97dc0b1))
+* **internal:** update gitignore ([3dbe64e](https://github.com/kernel/hypeman-go/commit/3dbe64e2bdb18744c58d30a8a9df44107fed6a61))
+* remove unnecessary error check for url parsing ([cd07c8f](https://github.com/kernel/hypeman-go/commit/cd07c8ffd89e1fc31ca8769be974d6830f38cb07))
+* update docs for api:"required" ([45f88d9](https://github.com/kernel/hypeman-go/commit/45f88d9c8507e0c6aa729d52a69d58041d0dd3db))
+
 ## 0.16.0 (2026-03-23)
 
 Full Changelog: [v0.15.0...v0.16.0](https://github.com/kernel/hypeman-go/compare/v0.15.0...v0.16.0)
