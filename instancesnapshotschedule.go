@@ -4,12 +4,12 @@ package hypeman
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"slices"
 
+	"github.com/kernel/hypeman-go/internal/apijson"
 	shimjson "github.com/kernel/hypeman-go/internal/encoding/json"
 	"github.com/kernel/hypeman-go/internal/requestconfig"
 	"github.com/kernel/hypeman-go/option"
@@ -89,5 +89,5 @@ func (r InstanceSnapshotScheduleUpdateParams) MarshalJSON() (data []byte, err er
 	return shimjson.Marshal(r.SetSnapshotScheduleRequest)
 }
 func (r *InstanceSnapshotScheduleUpdateParams) UnmarshalJSON(data []byte) error {
-	return json.Unmarshal(data, &r.SetSnapshotScheduleRequest)
+	return apijson.UnmarshalRoot(data, r)
 }
