@@ -4,7 +4,6 @@ package hypeman
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"slices"
 	"time"
@@ -387,5 +386,5 @@ func (r ResourceReclaimMemoryParams) MarshalJSON() (data []byte, err error) {
 	return shimjson.Marshal(r.MemoryReclaimRequest)
 }
 func (r *ResourceReclaimMemoryParams) UnmarshalJSON(data []byte) error {
-	return json.Unmarshal(data, &r.MemoryReclaimRequest)
+	return apijson.UnmarshalRoot(data, r)
 }
