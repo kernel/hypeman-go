@@ -30,6 +30,7 @@ import (
 // the [NewInstanceService] method instead.
 type InstanceService struct {
 	Options          []option.RequestOption
+	AutoStandby      InstanceAutoStandbyService
 	Volumes          InstanceVolumeService
 	Snapshots        InstanceSnapshotService
 	SnapshotSchedule InstanceSnapshotScheduleService
@@ -41,6 +42,7 @@ type InstanceService struct {
 func NewInstanceService(opts ...option.RequestOption) (r InstanceService) {
 	r = InstanceService{}
 	r.Options = opts
+	r.AutoStandby = NewInstanceAutoStandbyService(opts...)
 	r.Volumes = NewInstanceVolumeService(opts...)
 	r.Snapshots = NewInstanceSnapshotService(opts...)
 	r.SnapshotSchedule = NewInstanceSnapshotScheduleService(opts...)
@@ -229,6 +231,154 @@ func (r *InstanceService) Wait(ctx context.Context, id string, query InstanceWai
 	return res, err
 }
 
+// Linux-only automatic standby policy based on active inbound TCP connections
+// observed from the host conntrack table.
+type AutoStandbyPolicy struct {
+	// Whether automatic standby is enabled for this instance.
+	Enabled bool `json:"enabled"`
+	// How long the instance must have zero qualifying inbound TCP connections before
+	// Hypeman places it into standby.
+	IdleTimeout string `json:"idle_timeout"`
+	// Optional destination TCP ports that should not keep the instance awake.
+	IgnoreDestinationPorts []int64 `json:"ignore_destination_ports"`
+	// Optional client CIDRs that should not keep the instance awake.
+	IgnoreSourceCidrs []string `json:"ignore_source_cidrs"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Enabled                respjson.Field
+		IdleTimeout            respjson.Field
+		IgnoreDestinationPorts respjson.Field
+		IgnoreSourceCidrs      respjson.Field
+		ExtraFields            map[string]respjson.Field
+		raw                    string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AutoStandbyPolicy) RawJSON() string { return r.JSON.raw }
+func (r *AutoStandbyPolicy) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this AutoStandbyPolicy to a AutoStandbyPolicyParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// AutoStandbyPolicyParam.Overrides()
+func (r AutoStandbyPolicy) ToParam() AutoStandbyPolicyParam {
+	return param.Override[AutoStandbyPolicyParam](json.RawMessage(r.RawJSON()))
+}
+
+// Linux-only automatic standby policy based on active inbound TCP connections
+// observed from the host conntrack table.
+type AutoStandbyPolicyParam struct {
+	// Whether automatic standby is enabled for this instance.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// How long the instance must have zero qualifying inbound TCP connections before
+	// Hypeman places it into standby.
+	IdleTimeout param.Opt[string] `json:"idle_timeout,omitzero"`
+	// Optional destination TCP ports that should not keep the instance awake.
+	IgnoreDestinationPorts []int64 `json:"ignore_destination_ports,omitzero"`
+	// Optional client CIDRs that should not keep the instance awake.
+	IgnoreSourceCidrs []string `json:"ignore_source_cidrs,omitzero"`
+	paramObj
+}
+
+func (r AutoStandbyPolicyParam) MarshalJSON() (data []byte, err error) {
+	type shadow AutoStandbyPolicyParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AutoStandbyPolicyParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AutoStandbyStatus struct {
+	// Number of currently tracked qualifying inbound TCP connections.
+	ActiveInboundConnections int64 `json:"active_inbound_connections" api:"required"`
+	// Whether the instance has any auto-standby policy configured.
+	Configured bool `json:"configured" api:"required"`
+	// Whether the instance is currently eligible to enter standby.
+	Eligible bool `json:"eligible" api:"required"`
+	// Whether the configured auto-standby policy is enabled.
+	Enabled bool `json:"enabled" api:"required"`
+	// Any of "unsupported_platform", "policy_missing", "policy_disabled",
+	// "instance_not_running", "network_disabled", "missing_ip", "has_vgpu",
+	// "active_inbound_connections", "idle_timeout_not_elapsed", "observer_error",
+	// "ready_for_standby".
+	Reason AutoStandbyStatusReason `json:"reason" api:"required"`
+	// Any of "unsupported", "disabled", "ineligible", "active", "idle_countdown",
+	// "ready_for_standby", "standby_requested", "error".
+	Status AutoStandbyStatusStatus `json:"status" api:"required"`
+	// Whether the current host platform supports auto-standby diagnostics.
+	Supported bool `json:"supported" api:"required"`
+	// Diagnostic identifier for the runtime tracking mode in use.
+	TrackingMode string `json:"tracking_mode" api:"required"`
+	// Remaining time before the controller attempts standby, when applicable.
+	CountdownRemaining string `json:"countdown_remaining" api:"nullable"`
+	// When the controller most recently observed the instance become idle.
+	IdleSince time.Time `json:"idle_since" api:"nullable" format:"date-time"`
+	// Configured idle timeout from the auto-standby policy.
+	IdleTimeout string `json:"idle_timeout" api:"nullable"`
+	// Timestamp of the most recent qualifying inbound TCP activity the controller
+	// observed.
+	LastInboundActivityAt time.Time `json:"last_inbound_activity_at" api:"nullable" format:"date-time"`
+	// When the controller expects to attempt standby next, if a countdown is active.
+	NextStandbyAt time.Time `json:"next_standby_at" api:"nullable" format:"date-time"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ActiveInboundConnections respjson.Field
+		Configured               respjson.Field
+		Eligible                 respjson.Field
+		Enabled                  respjson.Field
+		Reason                   respjson.Field
+		Status                   respjson.Field
+		Supported                respjson.Field
+		TrackingMode             respjson.Field
+		CountdownRemaining       respjson.Field
+		IdleSince                respjson.Field
+		IdleTimeout              respjson.Field
+		LastInboundActivityAt    respjson.Field
+		NextStandbyAt            respjson.Field
+		ExtraFields              map[string]respjson.Field
+		raw                      string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AutoStandbyStatus) RawJSON() string { return r.JSON.raw }
+func (r *AutoStandbyStatus) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AutoStandbyStatusReason string
+
+const (
+	AutoStandbyStatusReasonUnsupportedPlatform      AutoStandbyStatusReason = "unsupported_platform"
+	AutoStandbyStatusReasonPolicyMissing            AutoStandbyStatusReason = "policy_missing"
+	AutoStandbyStatusReasonPolicyDisabled           AutoStandbyStatusReason = "policy_disabled"
+	AutoStandbyStatusReasonInstanceNotRunning       AutoStandbyStatusReason = "instance_not_running"
+	AutoStandbyStatusReasonNetworkDisabled          AutoStandbyStatusReason = "network_disabled"
+	AutoStandbyStatusReasonMissingIP                AutoStandbyStatusReason = "missing_ip"
+	AutoStandbyStatusReasonHasVgpu                  AutoStandbyStatusReason = "has_vgpu"
+	AutoStandbyStatusReasonActiveInboundConnections AutoStandbyStatusReason = "active_inbound_connections"
+	AutoStandbyStatusReasonIdleTimeoutNotElapsed    AutoStandbyStatusReason = "idle_timeout_not_elapsed"
+	AutoStandbyStatusReasonObserverError            AutoStandbyStatusReason = "observer_error"
+	AutoStandbyStatusReasonReadyForStandby          AutoStandbyStatusReason = "ready_for_standby"
+)
+
+type AutoStandbyStatusStatus string
+
+const (
+	AutoStandbyStatusStatusUnsupported      AutoStandbyStatusStatus = "unsupported"
+	AutoStandbyStatusStatusDisabled         AutoStandbyStatusStatus = "disabled"
+	AutoStandbyStatusStatusIneligible       AutoStandbyStatusStatus = "ineligible"
+	AutoStandbyStatusStatusActive           AutoStandbyStatusStatus = "active"
+	AutoStandbyStatusStatusIdleCountdown    AutoStandbyStatusStatus = "idle_countdown"
+	AutoStandbyStatusStatusReadyForStandby  AutoStandbyStatusStatus = "ready_for_standby"
+	AutoStandbyStatusStatusStandbyRequested AutoStandbyStatusStatus = "standby_requested"
+	AutoStandbyStatusStatusError            AutoStandbyStatusStatus = "error"
+)
+
 type Instance struct {
 	// Auto-generated unique identifier (CUID2 format)
 	ID string `json:"id" api:"required"`
@@ -252,6 +402,9 @@ type Instance struct {
 	// Any of "Created", "Initializing", "Running", "Paused", "Shutdown", "Stopped",
 	// "Standby", "Unknown".
 	State InstanceState `json:"state" api:"required"`
+	// Linux-only automatic standby policy based on active inbound TCP connections
+	// observed from the host conntrack table.
+	AutoStandby AutoStandbyPolicy `json:"auto_standby"`
 	// Disk I/O rate limit (human-readable, e.g., "100MB/s")
 	DiskIoBps string `json:"disk_io_bps"`
 	// Environment variables
@@ -297,6 +450,7 @@ type Instance struct {
 		Image          respjson.Field
 		Name           respjson.Field
 		State          respjson.Field
+		AutoStandby    respjson.Field
 		DiskIoBps      respjson.Field
 		Env            respjson.Field
 		ExitCode       respjson.Field
@@ -784,6 +938,9 @@ type InstanceNewParams struct {
 	SkipKernelHeaders param.Opt[bool] `json:"skip_kernel_headers,omitzero"`
 	// Number of virtual CPUs
 	Vcpus param.Opt[int64] `json:"vcpus,omitzero"`
+	// Linux-only automatic standby policy based on active inbound TCP connections
+	// observed from the host conntrack table.
+	AutoStandby AutoStandbyPolicyParam `json:"auto_standby,omitzero"`
 	// Override image CMD (like docker run <image> <command>). Omit to use image
 	// default.
 	Cmd []string `json:"cmd,omitzero"`
@@ -992,6 +1149,9 @@ func init() {
 }
 
 type InstanceUpdateParams struct {
+	// Linux-only automatic standby policy based on active inbound TCP connections
+	// observed from the host conntrack table.
+	AutoStandby AutoStandbyPolicyParam `json:"auto_standby,omitzero"`
 	// Environment variables to update (merged with existing). Only keys referenced by
 	// the instance's existing credential `source.env` bindings are accepted. Use this
 	// to rotate real credential values without restarting the VM.
