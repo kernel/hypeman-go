@@ -30,7 +30,13 @@ func TestInstanceNewWithOptionalParams(t *testing.T) {
 	_, err := client.Instances.New(context.TODO(), hypeman.InstanceNewParams{
 		Image: "docker.io/library/alpine:latest",
 		Name:  "my-workload-1",
-		Cmd:   []string{"echo", "hello"},
+		AutoStandby: hypeman.AutoStandbyPolicyParam{
+			Enabled:                hypeman.Bool(true),
+			IdleTimeout:            hypeman.String("5m"),
+			IgnoreDestinationPorts: []int64{22, 9000},
+			IgnoreSourceCidrs:      []string{"10.0.0.0/8", "192.168.0.0/16"},
+		},
+		Cmd: []string{"echo", "hello"},
 		Credentials: map[string]hypeman.InstanceNewParamsCredential{
 			"OUTBOUND_OPENAI_KEY": {
 				Inject: []hypeman.InstanceNewParamsCredentialInject{{
@@ -118,6 +124,12 @@ func TestInstanceUpdateWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"id",
 		hypeman.InstanceUpdateParams{
+			AutoStandby: hypeman.AutoStandbyPolicyParam{
+				Enabled:                hypeman.Bool(true),
+				IdleTimeout:            hypeman.String("5m"),
+				IgnoreDestinationPorts: []int64{22, 9000},
+				IgnoreSourceCidrs:      []string{"10.0.0.0/8", "192.168.0.0/16"},
+			},
 			Env: map[string]string{
 				"OUTBOUND_OPENAI_KEY": "new-rotated-key-456",
 			},
