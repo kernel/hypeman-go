@@ -6,6 +6,8 @@
 
 <!-- x-release-please-end -->
 
+:mango: `hypemango "github.com/kernel/hypeman-go"` :mango: 
+
 The Hypeman Go library provides convenient access to the Hypeman REST API
 from applications written in Go.
 
