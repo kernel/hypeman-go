@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.18.0 (2026-04-17)
+
+Full Changelog: [v0.17.0...v0.18.0](https://github.com/kernel/hypeman-go/compare/v0.17.0...v0.18.0)
+
+### Features
+
+* Add standby compression start delay ([bf58116](https://github.com/kernel/hypeman-go/commit/bf5811644658e76684892345a2485b0425c07bb4))
+
 ## 0.17.0 (2026-04-07)
 
 Full Changelog: [v0.16.0...v0.17.0](https://github.com/kernel/hypeman-go/compare/v0.16.0...v0.17.0)
