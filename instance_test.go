@@ -84,6 +84,7 @@ func TestInstanceNewWithOptionalParams(t *testing.T) {
 				Algorithm: shared.SnapshotCompressionConfigAlgorithmZstd,
 				Level:     hypeman.Int(1),
 			},
+			StandbyCompressionDelay: hypeman.String("2m"),
 		},
 		Tags: map[string]string{
 			"team": "backend",
@@ -290,10 +291,13 @@ func TestInstanceStandbyWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"id",
 		hypeman.InstanceStandbyParams{
-			Compression: shared.SnapshotCompressionConfigParam{
-				Enabled:   true,
-				Algorithm: shared.SnapshotCompressionConfigAlgorithmZstd,
-				Level:     hypeman.Int(1),
+			StandbyInstanceRequest: hypeman.StandbyInstanceRequestParam{
+				Compression: shared.SnapshotCompressionConfigParam{
+					Enabled:   true,
+					Algorithm: shared.SnapshotCompressionConfigAlgorithmZstd,
+					Level:     hypeman.Int(1),
+				},
+				CompressionDelay: hypeman.String("45s"),
 			},
 		},
 	)

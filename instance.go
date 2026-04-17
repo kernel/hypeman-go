@@ -14,6 +14,7 @@ import (
 
 	"github.com/kernel/hypeman-go/internal/apijson"
 	"github.com/kernel/hypeman-go/internal/apiquery"
+	shimjson "github.com/kernel/hypeman-go/internal/encoding/json"
 	"github.com/kernel/hypeman-go/internal/requestconfig"
 	"github.com/kernel/hypeman-go/option"
 	"github.com/kernel/hypeman-go/packages/param"
@@ -675,11 +676,16 @@ func (r *SetSnapshotScheduleRequestParam) UnmarshalJSON(data []byte) error {
 
 type SnapshotPolicy struct {
 	Compression shared.SnapshotCompressionConfig `json:"compression"`
+	// Delay before standby snapshot compression begins, expressed as a Go duration
+	// like "30s" or "5m". Applies only to standby compression and defaults to
+	// immediate start when omitted.
+	StandbyCompressionDelay string `json:"standby_compression_delay"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Compression respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		Compression             respjson.Field
+		StandbyCompressionDelay respjson.Field
+		ExtraFields             map[string]respjson.Field
+		raw                     string
 	} `json:"-"`
 }
 
@@ -699,7 +705,11 @@ func (r SnapshotPolicy) ToParam() SnapshotPolicyParam {
 }
 
 type SnapshotPolicyParam struct {
-	Compression shared.SnapshotCompressionConfigParam `json:"compression,omitzero"`
+	// Delay before standby snapshot compression begins, expressed as a Go duration
+	// like "30s" or "5m". Applies only to standby compression and defaults to
+	// immediate start when omitted.
+	StandbyCompressionDelay param.Opt[string]                     `json:"standby_compression_delay,omitzero"`
+	Compression             shared.SnapshotCompressionConfigParam `json:"compression,omitzero"`
 	paramObj
 }
 
@@ -805,6 +815,24 @@ func (r SnapshotScheduleRetentionParam) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *SnapshotScheduleRetentionParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type StandbyInstanceRequestParam struct {
+	// Delay before standby snapshot compression begins, expressed as a Go duration
+	// like "30s" or "5m". Overrides the instance default for this standby operation
+	// only.
+	CompressionDelay param.Opt[string] `json:"compression_delay,omitzero"`
+	// Compression settings for standby snapshot memory. Overrides instance defaults.
+	Compression shared.SnapshotCompressionConfigParam `json:"compression,omitzero"`
+	paramObj
+}
+
+func (r StandbyInstanceRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow StandbyInstanceRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *StandbyInstanceRequestParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -964,8 +992,9 @@ type InstanceNewParams struct {
 	Hypervisor InstanceNewParamsHypervisor `json:"hypervisor,omitzero"`
 	// Network configuration for the instance
 	Network InstanceNewParamsNetwork `json:"network,omitzero"`
-	// Snapshot compression policy for this instance. Controls compression settings
-	// applied when creating snapshots or entering standby.
+	// Snapshot policy for this instance. Controls compression settings applied when
+	// creating snapshots or entering standby, plus any default standby-only
+	// compression delay.
 	SnapshotPolicy SnapshotPolicyParam `json:"snapshot_policy,omitzero"`
 	// User-defined key-value tags.
 	Tags map[string]string `json:"tags,omitzero"`
@@ -1275,13 +1304,12 @@ const (
 )
 
 type InstanceStandbyParams struct {
-	Compression shared.SnapshotCompressionConfigParam `json:"compression,omitzero"`
+	StandbyInstanceRequest StandbyInstanceRequestParam
 	paramObj
 }
 
 func (r InstanceStandbyParams) MarshalJSON() (data []byte, err error) {
-	type shadow InstanceStandbyParams
-	return param.MarshalObject(r, (*shadow)(&r))
+	return shimjson.Marshal(r.StandbyInstanceRequest)
 }
 func (r *InstanceStandbyParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
