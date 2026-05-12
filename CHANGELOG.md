@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.19.0 (2026-05-12)
+
+Full Changelog: [v0.18.0...v0.19.0](https://github.com/kernel/hypeman-go/compare/v0.18.0...v0.19.0)
+
+### Features
+
+* **go:** add default http client with timeout ([4562f58](https://github.com/kernel/hypeman-go/commit/4562f586a6f26caebf5908b9e899cd578a3af4c1))
+* support setting headers via env ([3b6d6cd](https://github.com/kernel/hypeman-go/commit/3b6d6cd3ff96bef7d0f01e58116ca74eef5c8e1c))
+* Track per-phase duration on each instance ([312c26f](https://github.com/kernel/hypeman-go/commit/312c26f13a0c22a91b902b51c13a431452dca79d))
+
+
+### Bug Fixes
+
+* **go:** avoid panic when http.DefaultTransport is wrapped ([90abdb2](https://github.com/kernel/hypeman-go/commit/90abdb2fe804de224236e5a0556b5675afb49c09))
+
+
+### Chores
+
+* avoid embedding reflect.Type for dead code elimination ([768a2a1](https://github.com/kernel/hypeman-go/commit/768a2a12c13728f05946bd4c0f24e5f3a90f8620))
+* **internal:** more robust bootstrap script ([53ef042](https://github.com/kernel/hypeman-go/commit/53ef042e66ce7e050877be0e08613c41e66026de))
+* redact api-key headers in debug logs ([0f70339](https://github.com/kernel/hypeman-go/commit/0f703395ab4135be91ac30c47ed94bf2e61989b5))
+
 ## 0.18.0 (2026-04-17)
 
 Full Changelog: [v0.17.0...v0.18.0](https://github.com/kernel/hypeman-go/compare/v0.17.0...v0.18.0)

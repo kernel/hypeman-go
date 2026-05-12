@@ -406,6 +406,10 @@ type Instance struct {
 	// Linux-only automatic standby policy based on active inbound TCP connections
 	// observed from the host conntrack table.
 	AutoStandby AutoStandbyPolicy `json:"auto_standby"`
+	// The lifecycle phase the instance is currently in.
+	CurrentPhase string `json:"current_phase"`
+	// When the instance entered current_phase.
+	CurrentPhaseSince time.Time `json:"current_phase_since" format:"date-time"`
 	// Disk I/O rate limit (human-readable, e.g., "100MB/s")
 	DiskIoBps string `json:"disk_io_bps"`
 	// Environment variables
@@ -429,6 +433,12 @@ type Instance struct {
 	Network InstanceNetwork `json:"network"`
 	// Writable overlay disk size (human-readable)
 	OverlaySize string `json:"overlay_size"`
+	// Cumulative milliseconds the instance has spent in each lifecycle phase,
+	// including time accrued in the current phase up to the response time. Keys mirror
+	// instance states lowercased (running, standby, paused, stopped, created,
+	// initializing, shutdown). Consumers (e.g. billing) sum the phases they consider
+	// billable.
+	PhaseDurationsMs map[string]int64 `json:"phase_durations_ms"`
 	// Base memory size (human-readable)
 	Size           string         `json:"size"`
 	SnapshotPolicy SnapshotPolicy `json:"snapshot_policy"`
@@ -446,32 +456,35 @@ type Instance struct {
 	Volumes []VolumeMount `json:"volumes"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID             respjson.Field
-		CreatedAt      respjson.Field
-		Image          respjson.Field
-		Name           respjson.Field
-		State          respjson.Field
-		AutoStandby    respjson.Field
-		DiskIoBps      respjson.Field
-		Env            respjson.Field
-		ExitCode       respjson.Field
-		ExitMessage    respjson.Field
-		GPU            respjson.Field
-		HasSnapshot    respjson.Field
-		HotplugSize    respjson.Field
-		Hypervisor     respjson.Field
-		Network        respjson.Field
-		OverlaySize    respjson.Field
-		Size           respjson.Field
-		SnapshotPolicy respjson.Field
-		StartedAt      respjson.Field
-		StateError     respjson.Field
-		StoppedAt      respjson.Field
-		Tags           respjson.Field
-		Vcpus          respjson.Field
-		Volumes        respjson.Field
-		ExtraFields    map[string]respjson.Field
-		raw            string
+		ID                respjson.Field
+		CreatedAt         respjson.Field
+		Image             respjson.Field
+		Name              respjson.Field
+		State             respjson.Field
+		AutoStandby       respjson.Field
+		CurrentPhase      respjson.Field
+		CurrentPhaseSince respjson.Field
+		DiskIoBps         respjson.Field
+		Env               respjson.Field
+		ExitCode          respjson.Field
+		ExitMessage       respjson.Field
+		GPU               respjson.Field
+		HasSnapshot       respjson.Field
+		HotplugSize       respjson.Field
+		Hypervisor        respjson.Field
+		Network           respjson.Field
+		OverlaySize       respjson.Field
+		PhaseDurationsMs  respjson.Field
+		Size              respjson.Field
+		SnapshotPolicy    respjson.Field
+		StartedAt         respjson.Field
+		StateError        respjson.Field
+		StoppedAt         respjson.Field
+		Tags              respjson.Field
+		Vcpus             respjson.Field
+		Volumes           respjson.Field
+		ExtraFields       map[string]respjson.Field
+		raw               string
 	} `json:"-"`
 }
 
