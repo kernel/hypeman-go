@@ -93,6 +93,18 @@ func (r *InstanceService) Delete(ctx context.Context, id string, opts ...option.
 	return err
 }
 
+// Demote a template back to standby so it can be restored or deleted
+func (r *InstanceService) DemoteTemplate(ctx context.Context, id string, opts ...option.RequestOption) (res *Instance, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("instances/%s/demote-template", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
+	return res, err
+}
+
 // Fork an instance from stopped, standby, or running (with from_running=true)
 func (r *InstanceService) Fork(ctx context.Context, id string, body InstanceForkParams, opts ...option.RequestOption) (res *Instance, err error) {
 	opts = slices.Concat(r.Options, opts)
@@ -140,6 +152,18 @@ func (r *InstanceService) LogsStreaming(ctx context.Context, id string, query In
 	path := fmt.Sprintf("instances/%s/logs", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &raw, opts...)
 	return ssestream.NewStream[string](ssestream.NewDecoder(raw), err)
+}
+
+// Promote a standby instance into a fork-only template
+func (r *InstanceService) PromoteTemplate(ctx context.Context, id string, opts ...option.RequestOption) (res *Instance, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("instances/%s/promote-template", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
+	return res, err
 }
 
 // Restore instance from standby
@@ -391,17 +415,19 @@ type Instance struct {
 	Name string `json:"name" api:"required"`
 	// Instance state:
 	//
-	// - Created: VMM created but not started (Cloud Hypervisor native)
-	// - Initializing: VM is running while guest init is still in progress
-	// - Running: Guest program has started and instance is ready
-	// - Paused: VM is paused (Cloud Hypervisor native)
-	// - Shutdown: VM shut down but VMM exists (Cloud Hypervisor native)
-	// - Stopped: No VMM running, no snapshot exists
-	// - Standby: No VMM running, snapshot exists (can be restored)
-	// - Unknown: Failed to determine state (see state_error for details)
+	//   - Created: VMM created but not started (Cloud Hypervisor native)
+	//   - Initializing: VM is running while guest init is still in progress
+	//   - Running: Guest program has started and instance is ready
+	//   - Paused: VM is paused (Cloud Hypervisor native)
+	//   - Shutdown: VM shut down but VMM exists (Cloud Hypervisor native)
+	//   - Stopped: No VMM running, no snapshot exists
+	//   - Standby: No VMM running, snapshot exists (can be restored)
+	//   - Template: Standby snapshot promoted to a fork-only parent; cannot wake while
+	//     forks exist
+	//   - Unknown: Failed to determine state (see state_error for details)
 	//
 	// Any of "Created", "Initializing", "Running", "Paused", "Shutdown", "Stopped",
-	// "Standby", "Unknown".
+	// "Standby", "Template", "Unknown".
 	State InstanceState `json:"state" api:"required"`
 	// Linux-only automatic standby policy based on active inbound TCP connections
 	// observed from the host conntrack table.
@@ -496,14 +522,16 @@ func (r *Instance) UnmarshalJSON(data []byte) error {
 
 // Instance state:
 //
-// - Created: VMM created but not started (Cloud Hypervisor native)
-// - Initializing: VM is running while guest init is still in progress
-// - Running: Guest program has started and instance is ready
-// - Paused: VM is paused (Cloud Hypervisor native)
-// - Shutdown: VM shut down but VMM exists (Cloud Hypervisor native)
-// - Stopped: No VMM running, no snapshot exists
-// - Standby: No VMM running, snapshot exists (can be restored)
-// - Unknown: Failed to determine state (see state_error for details)
+//   - Created: VMM created but not started (Cloud Hypervisor native)
+//   - Initializing: VM is running while guest init is still in progress
+//   - Running: Guest program has started and instance is ready
+//   - Paused: VM is paused (Cloud Hypervisor native)
+//   - Shutdown: VM shut down but VMM exists (Cloud Hypervisor native)
+//   - Stopped: No VMM running, no snapshot exists
+//   - Standby: No VMM running, snapshot exists (can be restored)
+//   - Template: Standby snapshot promoted to a fork-only parent; cannot wake while
+//     forks exist
+//   - Unknown: Failed to determine state (see state_error for details)
 type InstanceState string
 
 const (
@@ -514,6 +542,7 @@ const (
 	InstanceStateShutdown     InstanceState = "Shutdown"
 	InstanceStateStopped      InstanceState = "Stopped"
 	InstanceStateStandby      InstanceState = "Standby"
+	InstanceStateTemplate     InstanceState = "Template"
 	InstanceStateUnknown      InstanceState = "Unknown"
 )
 
@@ -916,7 +945,7 @@ type WaitForStateResponse struct {
 	// Current instance state when the wait completed
 	//
 	// Any of "Created", "Initializing", "Running", "Paused", "Shutdown", "Stopped",
-	// "Standby", "Unknown".
+	// "Standby", "Template", "Unknown".
 	State WaitForStateResponseState `json:"state" api:"required"`
 	// Whether the timeout expired before the target state was reached
 	TimedOut bool `json:"timed_out" api:"required"`
@@ -949,6 +978,7 @@ const (
 	WaitForStateResponseStateShutdown     WaitForStateResponseState = "Shutdown"
 	WaitForStateResponseStateStopped      WaitForStateResponseState = "Stopped"
 	WaitForStateResponseStateStandby      WaitForStateResponseState = "Standby"
+	WaitForStateResponseStateTemplate     WaitForStateResponseState = "Template"
 	WaitForStateResponseStateUnknown      WaitForStateResponseState = "Unknown"
 )
 
@@ -1213,7 +1243,7 @@ type InstanceListParams struct {
 	// Filter instances by state (e.g., Running, Stopped)
 	//
 	// Any of "Created", "Initializing", "Running", "Paused", "Shutdown", "Stopped",
-	// "Standby", "Unknown".
+	// "Standby", "Template", "Unknown".
 	State InstanceListParamsState `query:"state,omitzero" json:"-"`
 	// Filter instances by tag key-value pairs. Uses deepObject style:
 	// ?tags[team]=backend&tags[env]=staging Multiple entries are ANDed together. All
@@ -1241,6 +1271,7 @@ const (
 	InstanceListParamsStateShutdown     InstanceListParamsState = "Shutdown"
 	InstanceListParamsStateStopped      InstanceListParamsState = "Stopped"
 	InstanceListParamsStateStandby      InstanceListParamsState = "Standby"
+	InstanceListParamsStateTemplate     InstanceListParamsState = "Template"
 	InstanceListParamsStateUnknown      InstanceListParamsState = "Unknown"
 )
 
@@ -1364,7 +1395,7 @@ type InstanceWaitParams struct {
 	// Target state to wait for
 	//
 	// Any of "Created", "Initializing", "Running", "Paused", "Shutdown", "Stopped",
-	// "Standby", "Unknown".
+	// "Standby", "Template", "Unknown".
 	State InstanceWaitParamsState `query:"state,omitzero" api:"required" json:"-"`
 	// Maximum duration to wait (Go duration format, e.g. "30s", "2m"). Capped at 5
 	// minutes. Defaults to 60 seconds.
@@ -1391,5 +1422,6 @@ const (
 	InstanceWaitParamsStateShutdown     InstanceWaitParamsState = "Shutdown"
 	InstanceWaitParamsStateStopped      InstanceWaitParamsState = "Stopped"
 	InstanceWaitParamsStateStandby      InstanceWaitParamsState = "Standby"
+	InstanceWaitParamsStateTemplate     InstanceWaitParamsState = "Template"
 	InstanceWaitParamsStateUnknown      InstanceWaitParamsState = "Unknown"
 )
