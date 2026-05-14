@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.20.0 (2026-05-14)
+
+Full Changelog: [v0.19.0...v0.20.0](https://github.com/kernel/hypeman-go/compare/v0.19.0...v0.20.0)
+
+### Features
+
+* **client:** optimize json encoder for internal types ([d8bd64d](https://github.com/kernel/hypeman-go/commit/d8bd64d9ec2cd00f3c219e1540cb18c1bc43ecb8))
+* Model template as an instance state instead of a separate registry ([8ea492b](https://github.com/kernel/hypeman-go/commit/8ea492b994dffbea6d99f1897d87aaa627835d1b))
+
 ## 0.19.0 (2026-05-12)
 
 Full Changelog: [v0.18.0...v0.19.0](https://github.com/kernel/hypeman-go/compare/v0.18.0...v0.19.0)
