@@ -38,6 +38,7 @@ Params Types:
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#HealthCheckExecParam">HealthCheckExecParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#HealthCheckHTTPParam">HealthCheckHTTPParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#HealthCheckTcpParam">HealthCheckTcpParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#RestartPolicyParam">RestartPolicyParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#SetSnapshotScheduleRequestParam">SetSnapshotScheduleRequestParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#SnapshotPolicyParam">SnapshotPolicyParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#SnapshotScheduleRetentionParam">SnapshotScheduleRetentionParam</a>
@@ -56,6 +57,8 @@ Response Types:
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceHealthStatus">InstanceHealthStatus</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceStats">InstanceStats</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#PathInfo">PathInfo</a>
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#RestartPolicy">RestartPolicy</a>
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#RestartStatus">RestartStatus</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#SnapshotPolicy">SnapshotPolicy</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#SnapshotSchedule">SnapshotSchedule</a>
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#SnapshotScheduleRetention">SnapshotScheduleRetention</a>

@@ -690,6 +690,10 @@ type Instance struct {
 	// initializing, shutdown). Consumers (e.g. billing) sum the phases they consider
 	// billable.
 	PhaseDurationsMs map[string]int64 `json:"phase_durations_ms"`
+	// Whole-instance restart supervision policy.
+	RestartPolicy RestartPolicy `json:"restart_policy"`
+	// Runtime status for restart policy decisions.
+	RestartStatus RestartStatus `json:"restart_status"`
 	// Base memory size (human-readable)
 	Size           string         `json:"size"`
 	SnapshotPolicy SnapshotPolicy `json:"snapshot_policy"`
@@ -728,6 +732,8 @@ type Instance struct {
 		Network           respjson.Field
 		OverlaySize       respjson.Field
 		PhaseDurationsMs  respjson.Field
+		RestartPolicy     respjson.Field
+		RestartStatus     respjson.Field
 		Size              respjson.Field
 		SnapshotPolicy    respjson.Field
 		StartedAt         respjson.Field
@@ -966,6 +972,139 @@ func (r PathInfo) RawJSON() string { return r.JSON.raw }
 func (r *PathInfo) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Whole-instance restart supervision policy.
+type RestartPolicy struct {
+	// Delay before each restart attempt, expressed as a Go duration like "5s" or "1m".
+	Backoff string `json:"backoff"`
+	// Consecutive automatic restart attempts before blocking retries. 0 means
+	// unlimited.
+	MaxAttempts int64 `json:"max_attempts"`
+	// Restart behavior when the guest program exits:
+	//
+	// - never: do not automatically restart
+	// - always: restart after any guest exit
+	// - on_failure: restart only for nonzero, signaled, OOM, or unknown exits
+	//
+	// Any of "never", "always", "on_failure".
+	Policy RestartPolicyPolicy `json:"policy"`
+	// Running this long resets the consecutive restart attempt count.
+	StableAfter string `json:"stable_after"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Backoff     respjson.Field
+		MaxAttempts respjson.Field
+		Policy      respjson.Field
+		StableAfter respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r RestartPolicy) RawJSON() string { return r.JSON.raw }
+func (r *RestartPolicy) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this RestartPolicy to a RestartPolicyParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// RestartPolicyParam.Overrides()
+func (r RestartPolicy) ToParam() RestartPolicyParam {
+	return param.Override[RestartPolicyParam](json.RawMessage(r.RawJSON()))
+}
+
+// Restart behavior when the guest program exits:
+//
+// - never: do not automatically restart
+// - always: restart after any guest exit
+// - on_failure: restart only for nonzero, signaled, OOM, or unknown exits
+type RestartPolicyPolicy string
+
+const (
+	RestartPolicyPolicyNever     RestartPolicyPolicy = "never"
+	RestartPolicyPolicyAlways    RestartPolicyPolicy = "always"
+	RestartPolicyPolicyOnFailure RestartPolicyPolicy = "on_failure"
+)
+
+// Whole-instance restart supervision policy.
+type RestartPolicyParam struct {
+	// Delay before each restart attempt, expressed as a Go duration like "5s" or "1m".
+	Backoff param.Opt[string] `json:"backoff,omitzero"`
+	// Consecutive automatic restart attempts before blocking retries. 0 means
+	// unlimited.
+	MaxAttempts param.Opt[int64] `json:"max_attempts,omitzero"`
+	// Running this long resets the consecutive restart attempt count.
+	StableAfter param.Opt[string] `json:"stable_after,omitzero"`
+	// Restart behavior when the guest program exits:
+	//
+	// - never: do not automatically restart
+	// - always: restart after any guest exit
+	// - on_failure: restart only for nonzero, signaled, OOM, or unknown exits
+	//
+	// Any of "never", "always", "on_failure".
+	Policy RestartPolicyPolicy `json:"policy,omitzero"`
+	paramObj
+}
+
+func (r RestartPolicyParam) MarshalJSON() (data []byte, err error) {
+	type shadow RestartPolicyParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *RestartPolicyParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Runtime status for restart policy decisions.
+type RestartStatus struct {
+	// Consecutive automatic restart attempts in the current failure window.
+	Attempts int64 `json:"attempts"`
+	// Reason automatic restarts are currently blocked.
+	//
+	// Any of "manual_stop", "max_attempts_exceeded".
+	BlockedReason RestartStatusBlockedReason `json:"blocked_reason" api:"nullable"`
+	// Last time Hypeman attempted an automatic restart.
+	LastAttemptAt time.Time `json:"last_attempt_at" api:"nullable" format:"date-time"`
+	// Most recent non-exit failure signal that entered restart policy.
+	//
+	// Any of "health_check_failed".
+	LastReason RestartStatusLastReason `json:"last_reason" api:"nullable"`
+	// Next scheduled automatic restart attempt after backoff.
+	NextAttemptAt time.Time `json:"next_attempt_at" api:"nullable" format:"date-time"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Attempts      respjson.Field
+		BlockedReason respjson.Field
+		LastAttemptAt respjson.Field
+		LastReason    respjson.Field
+		NextAttemptAt respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r RestartStatus) RawJSON() string { return r.JSON.raw }
+func (r *RestartStatus) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Reason automatic restarts are currently blocked.
+type RestartStatusBlockedReason string
+
+const (
+	RestartStatusBlockedReasonManualStop          RestartStatusBlockedReason = "manual_stop"
+	RestartStatusBlockedReasonMaxAttemptsExceeded RestartStatusBlockedReason = "max_attempts_exceeded"
+)
+
+// Most recent non-exit failure signal that entered restart policy.
+type RestartStatusLastReason string
+
+const (
+	RestartStatusLastReasonHealthCheckFailed RestartStatusLastReason = "health_check_failed"
+)
 
 // The properties Interval, Retention are required.
 type SetSnapshotScheduleRequestParam struct {
@@ -1309,6 +1448,8 @@ type InstanceNewParams struct {
 	Hypervisor InstanceNewParamsHypervisor `json:"hypervisor,omitzero"`
 	// Network configuration for the instance
 	Network InstanceNewParamsNetwork `json:"network,omitzero"`
+	// Whole-instance restart supervision policy.
+	RestartPolicy RestartPolicyParam `json:"restart_policy,omitzero"`
 	// Snapshot policy for this instance. Controls compression settings applied when
 	// creating snapshots or entering standby, plus any default standby-only
 	// compression delay.
@@ -1505,6 +1646,8 @@ type InstanceUpdateParams struct {
 	// Workload health check policy. Health is reported separately from instance
 	// lifecycle state.
 	HealthCheck HealthCheckParam `json:"health_check,omitzero"`
+	// Whole-instance restart supervision policy.
+	RestartPolicy RestartPolicyParam `json:"restart_policy,omitzero"`
 	paramObj
 }
 
