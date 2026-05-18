@@ -380,6 +380,253 @@ const (
 	AutoStandbyStatusStatusError            AutoStandbyStatusStatus = "error"
 )
 
+// Workload health check policy. Health is reported separately from instance
+// lifecycle state.
+type HealthCheck struct {
+	Exec HealthCheckExec `json:"exec"`
+	// Consecutive failed checks required to mark the workload unhealthy.
+	FailureThreshold int64           `json:"failure_threshold"`
+	HTTP             HealthCheckHTTP `json:"http"`
+	// Delay between checks as a Go duration.
+	Interval string `json:"interval"`
+	// Startup grace period before failures can mark the workload unhealthy.
+	StartPeriod string `json:"start_period"`
+	// Consecutive successful checks required to mark the workload healthy.
+	SuccessThreshold int64          `json:"success_threshold"`
+	Tcp              HealthCheckTcp `json:"tcp"`
+	// Per-check timeout as a Go duration.
+	Timeout string `json:"timeout"`
+	// Probe type. Omit health_check or set type=none to disable health checks.
+	//
+	// Any of "none", "http", "tcp", "exec".
+	Type HealthCheckType `json:"type"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Exec             respjson.Field
+		FailureThreshold respjson.Field
+		HTTP             respjson.Field
+		Interval         respjson.Field
+		StartPeriod      respjson.Field
+		SuccessThreshold respjson.Field
+		Tcp              respjson.Field
+		Timeout          respjson.Field
+		Type             respjson.Field
+		ExtraFields      map[string]respjson.Field
+		raw              string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r HealthCheck) RawJSON() string { return r.JSON.raw }
+func (r *HealthCheck) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this HealthCheck to a HealthCheckParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// HealthCheckParam.Overrides()
+func (r HealthCheck) ToParam() HealthCheckParam {
+	return param.Override[HealthCheckParam](json.RawMessage(r.RawJSON()))
+}
+
+// Probe type. Omit health_check or set type=none to disable health checks.
+type HealthCheckType string
+
+const (
+	HealthCheckTypeNone HealthCheckType = "none"
+	HealthCheckTypeHTTP HealthCheckType = "http"
+	HealthCheckTypeTcp  HealthCheckType = "tcp"
+	HealthCheckTypeExec HealthCheckType = "exec"
+)
+
+// Workload health check policy. Health is reported separately from instance
+// lifecycle state.
+type HealthCheckParam struct {
+	// Consecutive failed checks required to mark the workload unhealthy.
+	FailureThreshold param.Opt[int64] `json:"failure_threshold,omitzero"`
+	// Delay between checks as a Go duration.
+	Interval param.Opt[string] `json:"interval,omitzero"`
+	// Startup grace period before failures can mark the workload unhealthy.
+	StartPeriod param.Opt[string] `json:"start_period,omitzero"`
+	// Consecutive successful checks required to mark the workload healthy.
+	SuccessThreshold param.Opt[int64] `json:"success_threshold,omitzero"`
+	// Per-check timeout as a Go duration.
+	Timeout param.Opt[string]    `json:"timeout,omitzero"`
+	Exec    HealthCheckExecParam `json:"exec,omitzero"`
+	HTTP    HealthCheckHTTPParam `json:"http,omitzero"`
+	Tcp     HealthCheckTcpParam  `json:"tcp,omitzero"`
+	// Probe type. Omit health_check or set type=none to disable health checks.
+	//
+	// Any of "none", "http", "tcp", "exec".
+	Type HealthCheckType `json:"type,omitzero"`
+	paramObj
+}
+
+func (r HealthCheckParam) MarshalJSON() (data []byte, err error) {
+	type shadow HealthCheckParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *HealthCheckParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type HealthCheckExec struct {
+	// Command and arguments to run inside the guest after guest-agent readiness.
+	Command []string `json:"command" api:"required"`
+	// Optional working directory for the command.
+	WorkingDir string `json:"working_dir"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Command     respjson.Field
+		WorkingDir  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r HealthCheckExec) RawJSON() string { return r.JSON.raw }
+func (r *HealthCheckExec) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this HealthCheckExec to a HealthCheckExecParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// HealthCheckExecParam.Overrides()
+func (r HealthCheckExec) ToParam() HealthCheckExecParam {
+	return param.Override[HealthCheckExecParam](json.RawMessage(r.RawJSON()))
+}
+
+// The property Command is required.
+type HealthCheckExecParam struct {
+	// Command and arguments to run inside the guest after guest-agent readiness.
+	Command []string `json:"command,omitzero" api:"required"`
+	// Optional working directory for the command.
+	WorkingDir param.Opt[string] `json:"working_dir,omitzero"`
+	paramObj
+}
+
+func (r HealthCheckExecParam) MarshalJSON() (data []byte, err error) {
+	type shadow HealthCheckExecParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *HealthCheckExecParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type HealthCheckHTTP struct {
+	// Port to probe on the instance network address.
+	Port int64 `json:"port" api:"required"`
+	// Exact status code required for a successful probe.
+	ExpectedStatus int64 `json:"expected_status"`
+	// HTTP path to request.
+	Path string `json:"path"`
+	// HTTP scheme to use for the probe.
+	//
+	// Any of "http", "https".
+	Scheme HealthCheckHTTPScheme `json:"scheme"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Port           respjson.Field
+		ExpectedStatus respjson.Field
+		Path           respjson.Field
+		Scheme         respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r HealthCheckHTTP) RawJSON() string { return r.JSON.raw }
+func (r *HealthCheckHTTP) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this HealthCheckHTTP to a HealthCheckHTTPParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// HealthCheckHTTPParam.Overrides()
+func (r HealthCheckHTTP) ToParam() HealthCheckHTTPParam {
+	return param.Override[HealthCheckHTTPParam](json.RawMessage(r.RawJSON()))
+}
+
+// HTTP scheme to use for the probe.
+type HealthCheckHTTPScheme string
+
+const (
+	HealthCheckHTTPSchemeHTTP  HealthCheckHTTPScheme = "http"
+	HealthCheckHTTPSchemeHTTPS HealthCheckHTTPScheme = "https"
+)
+
+// The property Port is required.
+type HealthCheckHTTPParam struct {
+	// Port to probe on the instance network address.
+	Port int64 `json:"port" api:"required"`
+	// Exact status code required for a successful probe.
+	ExpectedStatus param.Opt[int64] `json:"expected_status,omitzero"`
+	// HTTP path to request.
+	Path param.Opt[string] `json:"path,omitzero"`
+	// HTTP scheme to use for the probe.
+	//
+	// Any of "http", "https".
+	Scheme HealthCheckHTTPScheme `json:"scheme,omitzero"`
+	paramObj
+}
+
+func (r HealthCheckHTTPParam) MarshalJSON() (data []byte, err error) {
+	type shadow HealthCheckHTTPParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *HealthCheckHTTPParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type HealthCheckTcp struct {
+	// Port to open on the instance network address.
+	Port int64 `json:"port" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Port        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r HealthCheckTcp) RawJSON() string { return r.JSON.raw }
+func (r *HealthCheckTcp) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this HealthCheckTcp to a HealthCheckTcpParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// HealthCheckTcpParam.Overrides()
+func (r HealthCheckTcp) ToParam() HealthCheckTcpParam {
+	return param.Override[HealthCheckTcpParam](json.RawMessage(r.RawJSON()))
+}
+
+// The property Port is required.
+type HealthCheckTcpParam struct {
+	// Port to open on the instance network address.
+	Port int64 `json:"port" api:"required"`
+	paramObj
+}
+
+func (r HealthCheckTcpParam) MarshalJSON() (data []byte, err error) {
+	type shadow HealthCheckTcpParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *HealthCheckTcpParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type Instance struct {
 	// Auto-generated unique identifier (CUID2 format)
 	ID string `json:"id" api:"required"`
@@ -423,6 +670,10 @@ type Instance struct {
 	GPU InstanceGPU `json:"gpu"`
 	// Whether a snapshot exists for this instance
 	HasSnapshot bool `json:"has_snapshot"`
+	// Workload health check policy. Health is reported separately from instance
+	// lifecycle state.
+	HealthCheck  HealthCheck          `json:"health_check"`
+	HealthStatus InstanceHealthStatus `json:"health_status"`
 	// Hotplug memory size (human-readable)
 	HotplugSize string `json:"hotplug_size"`
 	// Hypervisor running this instance
@@ -470,6 +721,8 @@ type Instance struct {
 		ExitMessage       respjson.Field
 		GPU               respjson.Field
 		HasSnapshot       respjson.Field
+		HealthCheck       respjson.Field
+		HealthStatus      respjson.Field
 		HotplugSize       respjson.Field
 		Hypervisor        respjson.Field
 		Network           respjson.Field
@@ -580,6 +833,54 @@ func (r InstanceNetwork) RawJSON() string { return r.JSON.raw }
 func (r *InstanceNetwork) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+type InstanceHealthStatus struct {
+	// Consecutive failed checks in the current health window.
+	ConsecutiveFailures int64 `json:"consecutive_failures" api:"required"`
+	// Consecutive successful checks in the current health window.
+	ConsecutiveSuccesses int64 `json:"consecutive_successes" api:"required"`
+	// Current workload health status.
+	//
+	// Any of "disabled", "starting", "healthy", "unhealthy", "unknown".
+	Status InstanceHealthStatusStatus `json:"status" api:"required"`
+	// Most recent check completion time.
+	LastCheckedAt time.Time `json:"last_checked_at" api:"nullable" format:"date-time"`
+	// Truncated error from the most recent failed check.
+	LastError string `json:"last_error" api:"nullable"`
+	// Most recent failed check completion time.
+	LastFailureAt time.Time `json:"last_failure_at" api:"nullable" format:"date-time"`
+	// Most recent successful check completion time.
+	LastSuccessAt time.Time `json:"last_success_at" api:"nullable" format:"date-time"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ConsecutiveFailures  respjson.Field
+		ConsecutiveSuccesses respjson.Field
+		Status               respjson.Field
+		LastCheckedAt        respjson.Field
+		LastError            respjson.Field
+		LastFailureAt        respjson.Field
+		LastSuccessAt        respjson.Field
+		ExtraFields          map[string]respjson.Field
+		raw                  string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r InstanceHealthStatus) RawJSON() string { return r.JSON.raw }
+func (r *InstanceHealthStatus) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Current workload health status.
+type InstanceHealthStatusStatus string
+
+const (
+	InstanceHealthStatusStatusDisabled  InstanceHealthStatusStatus = "disabled"
+	InstanceHealthStatusStatusStarting  InstanceHealthStatusStatus = "starting"
+	InstanceHealthStatusStatusHealthy   InstanceHealthStatusStatus = "healthy"
+	InstanceHealthStatusStatusUnhealthy InstanceHealthStatusStatus = "unhealthy"
+	InstanceHealthStatusStatusUnknown   InstanceHealthStatusStatus = "unknown"
+)
 
 // Real-time resource utilization statistics for a VM instance
 type InstanceStats struct {
@@ -999,6 +1300,9 @@ type InstanceNewParams struct {
 	Env map[string]string `json:"env,omitzero"`
 	// GPU configuration for the instance
 	GPU InstanceNewParamsGPU `json:"gpu,omitzero"`
+	// Workload health check policy. Health is reported separately from instance
+	// lifecycle state.
+	HealthCheck HealthCheckParam `json:"health_check,omitzero"`
 	// Hypervisor to use for this instance. Defaults to server configuration.
 	//
 	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
@@ -1198,6 +1502,9 @@ type InstanceUpdateParams struct {
 	// the instance's existing credential `source.env` bindings are accepted. Use this
 	// to rotate real credential values without restarting the VM.
 	Env map[string]string `json:"env,omitzero"`
+	// Workload health check policy. Health is reported separately from instance
+	// lifecycle state.
+	HealthCheck HealthCheckParam `json:"health_check,omitzero"`
 	paramObj
 }
 
