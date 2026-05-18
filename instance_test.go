@@ -95,7 +95,13 @@ func TestInstanceNewWithOptionalParams(t *testing.T) {
 			},
 			Enabled: hypeman.Bool(true),
 		},
-		OverlaySize:       hypeman.String("20GB"),
+		OverlaySize: hypeman.String("20GB"),
+		RestartPolicy: hypeman.RestartPolicyParam{
+			Backoff:     hypeman.String("5s"),
+			MaxAttempts: hypeman.Int(10),
+			Policy:      hypeman.RestartPolicyPolicyOnFailure,
+			StableAfter: hypeman.String("10m"),
+		},
 		Size:              hypeman.String("2GB"),
 		SkipGuestAgent:    hypeman.Bool(false),
 		SkipKernelHeaders: hypeman.Bool(true),
@@ -175,6 +181,12 @@ func TestInstanceUpdateWithOptionalParams(t *testing.T) {
 				},
 				Timeout: hypeman.String("2s"),
 				Type:    hypeman.HealthCheckTypeNone,
+			},
+			RestartPolicy: hypeman.RestartPolicyParam{
+				Backoff:     hypeman.String("5s"),
+				MaxAttempts: hypeman.Int(10),
+				Policy:      hypeman.RestartPolicyPolicyOnFailure,
+				StableAfter: hypeman.String("10m"),
 			},
 		},
 	)
