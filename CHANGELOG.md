@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.20.0 (2026-05-18)
+
+Full Changelog: [v0.19.0...v0.20.0](https://github.com/kernel/hypeman-go/compare/v0.19.0...v0.20.0)
+
+### Features
+
+* Add instance health checks ([6335d0e](https://github.com/kernel/hypeman-go/commit/6335d0e4156a205becb27419bf593b14580fba45))
+* Add instance restart policy ([cfdcca8](https://github.com/kernel/hypeman-go/commit/cfdcca8b51e20d5b0be4e99abc96a99b10adfd24))
+* **client:** optimize json encoder for internal types ([d8bd64d](https://github.com/kernel/hypeman-go/commit/d8bd64d9ec2cd00f3c219e1540cb18c1bc43ecb8))
+* Model template as an instance state instead of a separate registry ([8ea492b](https://github.com/kernel/hypeman-go/commit/8ea492b994dffbea6d99f1897d87aaa627835d1b))
+* Revert template state model ([537a689](https://github.com/kernel/hypeman-go/commit/537a68947307effc1c8a9efec8a9041fd6319e9d))
+
 ## 0.19.0 (2026-05-12)
 
 Full Changelog: [v0.18.0...v0.19.0](https://github.com/kernel/hypeman-go/compare/v0.18.0...v0.19.0)
