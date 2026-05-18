@@ -61,6 +61,27 @@ func TestInstanceNewWithOptionalParams(t *testing.T) {
 		GPU: hypeman.InstanceNewParamsGPU{
 			Profile: hypeman.String("L40S-1Q"),
 		},
+		HealthCheck: hypeman.HealthCheckParam{
+			Exec: hypeman.HealthCheckExecParam{
+				Command:    []string{"curl", "-f", "http://localhost:4318/"},
+				WorkingDir: hypeman.String("/app"),
+			},
+			FailureThreshold: hypeman.Int(3),
+			HTTP: hypeman.HealthCheckHTTPParam{
+				Port:           8080,
+				ExpectedStatus: hypeman.Int(200),
+				Path:           hypeman.String("/healthz"),
+				Scheme:         hypeman.HealthCheckHTTPSchemeHTTP,
+			},
+			Interval:         hypeman.String("10s"),
+			StartPeriod:      hypeman.String("30s"),
+			SuccessThreshold: hypeman.Int(1),
+			Tcp: hypeman.HealthCheckTcpParam{
+				Port: 5432,
+			},
+			Timeout: hypeman.String("2s"),
+			Type:    hypeman.HealthCheckTypeNone,
+		},
 		HotplugSize: hypeman.String("2GB"),
 		Hypervisor:  hypeman.InstanceNewParamsHypervisorCloudHypervisor,
 		Network: hypeman.InstanceNewParamsNetwork{
@@ -133,6 +154,27 @@ func TestInstanceUpdateWithOptionalParams(t *testing.T) {
 			},
 			Env: map[string]string{
 				"OUTBOUND_OPENAI_KEY": "new-rotated-key-456",
+			},
+			HealthCheck: hypeman.HealthCheckParam{
+				Exec: hypeman.HealthCheckExecParam{
+					Command:    []string{"curl", "-f", "http://localhost:4318/"},
+					WorkingDir: hypeman.String("/app"),
+				},
+				FailureThreshold: hypeman.Int(3),
+				HTTP: hypeman.HealthCheckHTTPParam{
+					Port:           8080,
+					ExpectedStatus: hypeman.Int(200),
+					Path:           hypeman.String("/healthz"),
+					Scheme:         hypeman.HealthCheckHTTPSchemeHTTP,
+				},
+				Interval:         hypeman.String("10s"),
+				StartPeriod:      hypeman.String("30s"),
+				SuccessThreshold: hypeman.Int(1),
+				Tcp: hypeman.HealthCheckTcpParam{
+					Port: 5432,
+				},
+				Timeout: hypeman.String("2s"),
+				Type:    hypeman.HealthCheckTypeNone,
 			},
 		},
 	)
