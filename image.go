@@ -98,6 +98,8 @@ type Image struct {
 	Env map[string]string `json:"env"`
 	// Error message if status is failed
 	Error string `json:"error" api:"nullable"`
+	// Resolved image platform as os/arch[/variant] (e.g. "linux/amd64")
+	Platform string `json:"platform"`
 	// Position in build queue (null if not queued)
 	QueuePosition int64 `json:"queue_position" api:"nullable"`
 	// Disk size in bytes (null until ready)
@@ -116,6 +118,7 @@ type Image struct {
 		Entrypoint    respjson.Field
 		Env           respjson.Field
 		Error         respjson.Field
+		Platform      respjson.Field
 		QueuePosition respjson.Field
 		SizeBytes     respjson.Field
 		Tags          respjson.Field
@@ -145,6 +148,11 @@ const (
 type ImageNewParams struct {
 	// OCI image reference (e.g., docker.io/library/nginx:latest)
 	Name string `json:"name" api:"required"`
+	// Target platform as os/arch[/variant] (e.g. "linux/amd64"), matching Docker
+	// --platform. Omit for the host platform. Not a fixed enum: the os/arch[/variant]
+	// grammar is validated server-side and invalid values return 400 invalid_platform.
+	// Only os "linux" with arch amd64 or arm64 is accepted today.
+	Platform param.Opt[string] `json:"platform,omitzero"`
 	// User-defined key-value tags.
 	Tags map[string]string `json:"tags,omitzero"`
 	paramObj
