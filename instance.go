@@ -316,6 +316,8 @@ type AutoStandbyStatus struct {
 	TrackingMode string `json:"tracking_mode" api:"required"`
 	// Remaining time before the controller attempts standby, when applicable.
 	CountdownRemaining string `json:"countdown_remaining" api:"nullable"`
+	// Until when auto-standby is held off, if a hold is active.
+	HoldUntil time.Time `json:"hold_until" api:"nullable" format:"date-time"`
 	// When the controller most recently observed the instance become idle.
 	IdleSince time.Time `json:"idle_since" api:"nullable" format:"date-time"`
 	// Configured idle timeout from the auto-standby policy.
@@ -336,6 +338,7 @@ type AutoStandbyStatus struct {
 		Supported                respjson.Field
 		TrackingMode             respjson.Field
 		CountdownRemaining       respjson.Field
+		HoldUntil                respjson.Field
 		IdleSince                respjson.Field
 		IdleTimeout              respjson.Field
 		LastInboundActivityAt    respjson.Field
@@ -690,6 +693,9 @@ type Instance struct {
 	// initializing, shutdown). Consumers (e.g. billing) sum the phases they consider
 	// billable.
 	PhaseDurationsMs map[string]int64 `json:"phase_durations_ms"`
+	// Resolved image platform as os/arch[/variant] (e.g. "linux/amd64"). amd64 images
+	// on an arm64 host run under Rosetta emulation.
+	Platform string `json:"platform"`
 	// Whole-instance restart supervision policy.
 	RestartPolicy RestartPolicy `json:"restart_policy"`
 	// Runtime status for restart policy decisions.
@@ -732,6 +738,7 @@ type Instance struct {
 		Network           respjson.Field
 		OverlaySize       respjson.Field
 		PhaseDurationsMs  respjson.Field
+		Platform          respjson.Field
 		RestartPolicy     respjson.Field
 		RestartStatus     respjson.Field
 		Size              respjson.Field
@@ -1406,6 +1413,11 @@ type InstanceNewParams struct {
 	HotplugSize param.Opt[string] `json:"hotplug_size,omitzero"`
 	// Writable overlay disk size (human-readable format like "10GB", "50G")
 	OverlaySize param.Opt[string] `json:"overlay_size,omitzero"`
+	// Target platform as os/arch[/variant] (e.g. "linux/amd64"), matching Docker
+	// --platform. Omit for the host platform. Not a fixed enum: the os/arch[/variant]
+	// grammar is validated server-side and invalid values return 400 invalid_platform.
+	// Only os "linux" with arch amd64 or arm64 is accepted today.
+	Platform param.Opt[string] `json:"platform,omitzero"`
 	// Base memory size (human-readable format like "1GB", "512MB", "2G")
 	Size param.Opt[string] `json:"size,omitzero"`
 	// Skip guest-agent installation during boot. When true, the exec and stat APIs

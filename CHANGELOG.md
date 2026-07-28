@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.21.0 (2026-07-28)
+
+Full Changelog: [v0.20.0...v0.21.0](https://github.com/kernel/hypeman-go/compare/v0.20.0...v0.21.0)
+
+### Features
+
+* Add design proposal: Rosetta x86-64 emulation for vz Linux guests ([1fe1f91](https://github.com/kernel/hypeman-go/commit/1fe1f91295d1601606c8cfd192414379a2e41106))
+* Add POST /instances/{id}/auto-standby/reset ([f87b47b](https://github.com/kernel/hypeman-go/commit/f87b47b2cd1e52b5987a0321c867fc1eb68cf6b9))
+* **stlc:** configurable CI runner and private-production-repo support in workflow templates ([a05ed0b](https://github.com/kernel/hypeman-go/commit/a05ed0b3571d085505f5adfe6f4121f79f2d642c))
+
 ## 0.20.0 (2026-05-18)
 
 Full Changelog: [v0.19.0...v0.20.0](https://github.com/kernel/hypeman-go/compare/v0.19.0...v0.20.0)

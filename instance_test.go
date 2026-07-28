@@ -96,6 +96,7 @@ func TestInstanceNewWithOptionalParams(t *testing.T) {
 			Enabled: hypeman.Bool(true),
 		},
 		OverlaySize: hypeman.String("20GB"),
+		Platform:    hypeman.String("linux/amd64"),
 		RestartPolicy: hypeman.RestartPolicyParam{
 			Backoff:     hypeman.String("5s"),
 			MaxAttempts: hypeman.Int(10),
