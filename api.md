@@ -86,6 +86,7 @@ Methods:
 
 Methods:
 
+- <code title="post /instances/{id}/auto-standby/hold">client.Instances.AutoStandby.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceAutoStandbyService.Hold">Hold</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#AutoStandbyStatus">AutoStandbyStatus</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="get /instances/{id}/auto-standby/status">client.Instances.AutoStandby.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#InstanceAutoStandbyService.Status">Status</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#AutoStandbyStatus">AutoStandbyStatus</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
 ## Volumes

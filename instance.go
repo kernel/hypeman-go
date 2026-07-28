@@ -316,6 +316,8 @@ type AutoStandbyStatus struct {
 	TrackingMode string `json:"tracking_mode" api:"required"`
 	// Remaining time before the controller attempts standby, when applicable.
 	CountdownRemaining string `json:"countdown_remaining" api:"nullable"`
+	// Until when auto-standby is held off, if a hold is active.
+	HoldUntil time.Time `json:"hold_until" api:"nullable" format:"date-time"`
 	// When the controller most recently observed the instance become idle.
 	IdleSince time.Time `json:"idle_since" api:"nullable" format:"date-time"`
 	// Configured idle timeout from the auto-standby policy.
@@ -336,6 +338,7 @@ type AutoStandbyStatus struct {
 		Supported                respjson.Field
 		TrackingMode             respjson.Field
 		CountdownRemaining       respjson.Field
+		HoldUntil                respjson.Field
 		IdleSince                respjson.Field
 		IdleTimeout              respjson.Field
 		LastInboundActivityAt    respjson.Field
