@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.22.0 (2026-07-29)
+
+Full Changelog: [v0.21.0...v0.22.0](https://github.com/kernel/hypeman-go/compare/v0.21.0...v0.22.0)
+
+### Features
+
+* Make an auto-standby hold replace the previous deadline ([4d1c198](https://github.com/kernel/hypeman-go/commit/4d1c198cf55391d189a04e50591650c7af175f53))
+
 ## 0.21.0 (2026-07-28)
 
 Full Changelog: [v0.20.0...v0.21.0](https://github.com/kernel/hypeman-go/compare/v0.20.0...v0.21.0)
