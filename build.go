@@ -117,7 +117,9 @@ type Build struct {
 	//
 	// Any of "queued", "building", "pushing", "ready", "failed", "cancelled".
 	Status BuildStatus `json:"status" api:"required"`
-	// Instance ID of the builder VM (for debugging)
+	// Persistent Builder resource whose cache backed this build
+	BuilderID string `json:"builder_id" api:"nullable"`
+	// Disposable VM instance that executed this build; distinct from builder_id
 	BuilderInstanceID string `json:"builder_instance_id" api:"nullable"`
 	// Build completion timestamp
 	CompletedAt time.Time `json:"completed_at" api:"nullable" format:"date-time"`
@@ -141,6 +143,7 @@ type Build struct {
 		ID                respjson.Field
 		CreatedAt         respjson.Field
 		Status            respjson.Field
+		BuilderID         respjson.Field
 		BuilderInstanceID respjson.Field
 		CompletedAt       respjson.Field
 		DurationMs        respjson.Field
@@ -247,6 +250,10 @@ type BuildNewParams struct {
 	Source io.Reader `json:"source,omitzero" api:"required" format:"binary"`
 	// Optional pinned base image digest
 	BaseImageDigest param.Opt[string] `json:"base_image_digest,omitzero"`
+	// Optional Builder ID whose persistent cache disk backs this build. This is the
+	// only builder selector. One build at a time runs on a builder; builds for the
+	// same builder are serialized.
+	BuilderID param.Opt[string] `json:"builder_id,omitzero"`
 	// Tenant-specific cache key prefix
 	CacheScope param.Opt[string] `json:"cache_scope,omitzero"`
 	// Number of vCPUs for builder VM (default 2)

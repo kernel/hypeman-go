@@ -3,10 +3,8 @@
 package hypeman_test
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"io"
 	"os"
 	"testing"
 
@@ -15,7 +13,7 @@ import (
 	"github.com/kernel/hypeman-go/option"
 )
 
-func TestBuildNewWithOptionalParams(t *testing.T) {
+func TestBuilderNewWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -28,44 +26,10 @@ func TestBuildNewWithOptionalParams(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Builds.New(context.TODO(), hypeman.BuildNewParams{
-		Source:          io.Reader(bytes.NewBuffer([]byte("Example data"))),
-		BaseImageDigest: hypeman.String("base_image_digest"),
-		BuilderID:       hypeman.String("builder_id"),
-		CacheScope:      hypeman.String("cache_scope"),
-		CPUs:            hypeman.Int(0),
-		Dockerfile:      hypeman.String("dockerfile"),
-		GlobalCacheKey:  hypeman.String("global_cache_key"),
-		ImageName:       hypeman.String("image_name"),
-		IsAdminBuild:    hypeman.String("is_admin_build"),
-		MemoryMB:        hypeman.Int(0),
-		Secrets:         hypeman.String("secrets"),
-		Tags:            hypeman.String("tags"),
-		TimeoutSeconds:  hypeman.Int(0),
-	})
-	if err != nil {
-		var apierr *hypeman.Error
-		if errors.As(err, &apierr) {
-			t.Log(string(apierr.DumpRequest(true)))
-		}
-		t.Fatalf("err should be nil: %s", err.Error())
-	}
-}
-
-func TestBuildListWithOptionalParams(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
-	baseURL := "http://localhost:4010"
-	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
-		baseURL = envURL
-	}
-	if !testutil.CheckTestServer(t, baseURL) {
-		return
-	}
-	client := hypeman.NewClient(
-		option.WithBaseURL(baseURL),
-		option.WithAPIKey("My API Key"),
-	)
-	_, err := client.Builds.List(context.TODO(), hypeman.BuildListParams{
+	_, err := client.Builders.New(context.TODO(), hypeman.BuilderNewParams{
+		ID:         hypeman.String("team-cache-1"),
+		DiskSizeGB: hypeman.Int(50),
+		Name:       hypeman.String("team-cache"),
 		Tags: map[string]string{
 			"team": "backend",
 			"env":  "staging",
@@ -80,7 +44,7 @@ func TestBuildListWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestBuildCancel(t *testing.T) {
+func TestBuilderListWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -93,7 +57,12 @@ func TestBuildCancel(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	err := client.Builds.Cancel(context.TODO(), "id")
+	_, err := client.Builders.List(context.TODO(), hypeman.BuilderListParams{
+		Tags: map[string]string{
+			"team": "backend",
+			"env":  "staging",
+		},
+	})
 	if err != nil {
 		var apierr *hypeman.Error
 		if errors.As(err, &apierr) {
@@ -103,7 +72,7 @@ func TestBuildCancel(t *testing.T) {
 	}
 }
 
-func TestBuildGet(t *testing.T) {
+func TestBuilderDelete(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -116,7 +85,53 @@ func TestBuildGet(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Builds.Get(context.TODO(), "id")
+	err := client.Builders.Delete(context.TODO(), "id")
+	if err != nil {
+		var apierr *hypeman.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestBuilderGet(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := hypeman.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Builders.Get(context.TODO(), "id")
+	if err != nil {
+		var apierr *hypeman.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestBuilderPrune(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := hypeman.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Builders.Prune(context.TODO(), "id")
 	if err != nil {
 		var apierr *hypeman.Error
 		if errors.As(err, &apierr) {

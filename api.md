@@ -205,6 +205,21 @@ Methods:
 - <code title="get /resources">client.Resources.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#ResourceService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Resources">Resources</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="post /resources/memory/reclaim">client.Resources.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#ResourceService.ReclaimMemory">ReclaimMemory</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#ResourceReclaimMemoryParams">ResourceReclaimMemoryParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#MemoryReclaimResponse">MemoryReclaimResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
+# Builders
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Builder">Builder</a>
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#BuilderStatus">BuilderStatus</a>
+
+Methods:
+
+- <code title="post /builders">client.Builders.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#BuilderService.New">New</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#BuilderNewParams">BuilderNewParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Builder">Builder</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /builders">client.Builders.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#BuilderService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#BuilderListParams">BuilderListParams</a>) (\*[]<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Builder">Builder</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="delete /builders/{id}">client.Builders.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#BuilderService.Delete">Delete</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
+- <code title="get /builders/{id}">client.Builders.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#BuilderService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Builder">Builder</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="post /builders/{id}/prune">client.Builders.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#BuilderService.Prune">Prune</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Builder">Builder</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
 # Builds
 
 Response Types:

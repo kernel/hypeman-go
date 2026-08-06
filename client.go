@@ -26,6 +26,7 @@ type Client struct {
 	Devices   DeviceService
 	Ingresses IngressService
 	Resources ResourceService
+	Builders  BuilderService
 	Builds    BuildService
 }
 
@@ -67,6 +68,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Devices = NewDeviceService(opts...)
 	r.Ingresses = NewIngressService(opts...)
 	r.Resources = NewResourceService(opts...)
+	r.Builders = NewBuilderService(opts...)
 	r.Builds = NewBuildService(opts...)
 
 	return

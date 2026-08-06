@@ -263,7 +263,7 @@ func WithRequestTimeout(dur time.Duration) RequestOption {
 // environment to be the "production" environment. An environment specifies which base URL
 // to use by default.
 func WithEnvironmentProduction() RequestOption {
-	return requestconfig.WithDefaultBaseURL("http://localhost:8080/")
+	return requestconfig.WithDefaultBaseURL("http://localhost:4973/")
 }
 
 // WithAPIKey returns a RequestOption that sets the client setting "api_key".
