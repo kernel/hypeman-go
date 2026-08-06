@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.23.0 (2026-08-06)
+
+Full Changelog: [v0.22.0...v0.23.0](https://github.com/kernel/hypeman-go/compare/v0.22.0...v0.23.0)
+
+### Features
+
+* initial stlc build ([3478126](https://github.com/kernel/hypeman-go/commit/34781268d670e1d79fb67d053530c589e31bf9c4))
+
 ## 0.22.0 (2026-07-29)
 
 Full Changelog: [v0.21.0...v0.22.0](https://github.com/kernel/hypeman-go/compare/v0.21.0...v0.22.0)
