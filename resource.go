@@ -148,7 +148,7 @@ const (
 type MemoryReclaimAction struct {
 	AppliedReclaimBytes int64 `json:"applied_reclaim_bytes" api:"required"`
 	AssignedMemoryBytes int64 `json:"assigned_memory_bytes" api:"required"`
-	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
+	// Any of "cloud-hypervisor", "firecracker", "qemu", "qemu-microvm", "vz".
 	Hypervisor                     MemoryReclaimActionHypervisor `json:"hypervisor" api:"required"`
 	InstanceID                     string                        `json:"instance_id" api:"required"`
 	InstanceName                   string                        `json:"instance_name" api:"required"`
@@ -190,6 +190,7 @@ const (
 	MemoryReclaimActionHypervisorCloudHypervisor MemoryReclaimActionHypervisor = "cloud-hypervisor"
 	MemoryReclaimActionHypervisorFirecracker     MemoryReclaimActionHypervisor = "firecracker"
 	MemoryReclaimActionHypervisorQemu            MemoryReclaimActionHypervisor = "qemu"
+	MemoryReclaimActionHypervisorQemuMicrovm     MemoryReclaimActionHypervisor = "qemu-microvm"
 	MemoryReclaimActionHypervisorVz              MemoryReclaimActionHypervisor = "vz"
 )
 

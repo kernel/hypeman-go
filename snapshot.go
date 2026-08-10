@@ -97,7 +97,7 @@ type Snapshot struct {
 	SizeBytes int64 `json:"size_bytes" api:"required"`
 	// Source instance hypervisor at snapshot creation time
 	//
-	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
+	// Any of "cloud-hypervisor", "firecracker", "qemu", "qemu-microvm", "vz".
 	SourceHypervisor SnapshotSourceHypervisor `json:"source_hypervisor" api:"required"`
 	// Source instance ID at snapshot creation time
 	SourceInstanceID string `json:"source_instance_id" api:"required"`
@@ -152,6 +152,7 @@ const (
 	SnapshotSourceHypervisorCloudHypervisor SnapshotSourceHypervisor = "cloud-hypervisor"
 	SnapshotSourceHypervisorFirecracker     SnapshotSourceHypervisor = "firecracker"
 	SnapshotSourceHypervisorQemu            SnapshotSourceHypervisor = "qemu"
+	SnapshotSourceHypervisorQemuMicrovm     SnapshotSourceHypervisor = "qemu-microvm"
 	SnapshotSourceHypervisorVz              SnapshotSourceHypervisor = "vz"
 )
 
@@ -202,7 +203,7 @@ type SnapshotForkParams struct {
 	// Optional hypervisor override. Allowed only when forking from a Stopped snapshot.
 	// Standby snapshots must fork with their original hypervisor.
 	//
-	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
+	// Any of "cloud-hypervisor", "firecracker", "qemu", "qemu-microvm", "vz".
 	TargetHypervisor SnapshotForkParamsTargetHypervisor `json:"target_hypervisor,omitzero"`
 	// Optional final state for the forked instance. Defaults by snapshot kind:
 	//
@@ -230,6 +231,7 @@ const (
 	SnapshotForkParamsTargetHypervisorCloudHypervisor SnapshotForkParamsTargetHypervisor = "cloud-hypervisor"
 	SnapshotForkParamsTargetHypervisorFirecracker     SnapshotForkParamsTargetHypervisor = "firecracker"
 	SnapshotForkParamsTargetHypervisorQemu            SnapshotForkParamsTargetHypervisor = "qemu"
+	SnapshotForkParamsTargetHypervisorQemuMicrovm     SnapshotForkParamsTargetHypervisor = "qemu-microvm"
 	SnapshotForkParamsTargetHypervisorVz              SnapshotForkParamsTargetHypervisor = "vz"
 )
 
