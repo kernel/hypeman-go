@@ -38,7 +38,11 @@ func TestIngressNewWithOptionalParams(t *testing.T) {
 				Port:     8080,
 			},
 			RedirectHTTP: hypeman.Bool(true),
-			Tls:          hypeman.Bool(true),
+			RequestHeaderAuth: hypeman.IngressRuleRequestHeaderAuthParam{
+				Header: "X-Ingress-Verification",
+				Value:  "0123456789abcdef0123456789abcdef",
+			},
+			Tls: hypeman.Bool(true),
 		}},
 		Tags: map[string]string{
 			"team": "backend",
