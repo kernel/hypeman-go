@@ -92,7 +92,7 @@ type InstanceSnapshotRestoreParams struct {
 	// Optional hypervisor override. Allowed only when restoring from a Stopped
 	// snapshot. Standby snapshots must restore with their original hypervisor.
 	//
-	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
+	// Any of "cloud-hypervisor", "firecracker", "qemu", "qemu-microvm", "vz".
 	TargetHypervisor InstanceSnapshotRestoreParamsTargetHypervisor `json:"target_hypervisor,omitzero"`
 	// Optional final state after restore. Defaults by snapshot kind:
 	//
@@ -120,6 +120,7 @@ const (
 	InstanceSnapshotRestoreParamsTargetHypervisorCloudHypervisor InstanceSnapshotRestoreParamsTargetHypervisor = "cloud-hypervisor"
 	InstanceSnapshotRestoreParamsTargetHypervisorFirecracker     InstanceSnapshotRestoreParamsTargetHypervisor = "firecracker"
 	InstanceSnapshotRestoreParamsTargetHypervisorQemu            InstanceSnapshotRestoreParamsTargetHypervisor = "qemu"
+	InstanceSnapshotRestoreParamsTargetHypervisorQemuMicrovm     InstanceSnapshotRestoreParamsTargetHypervisor = "qemu-microvm"
 	InstanceSnapshotRestoreParamsTargetHypervisorVz              InstanceSnapshotRestoreParamsTargetHypervisor = "vz"
 )
 

@@ -679,9 +679,9 @@ type Instance struct {
 	HealthStatus InstanceHealthStatus `json:"health_status"`
 	// Hotplug memory size (human-readable)
 	HotplugSize string `json:"hotplug_size"`
-	// Hypervisor running this instance
+	// Hypervisor backend running this instance
 	//
-	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
+	// Any of "cloud-hypervisor", "firecracker", "qemu", "qemu-microvm", "vz".
 	Hypervisor InstanceHypervisor `json:"hypervisor"`
 	// Network configuration of the instance
 	Network InstanceNetwork `json:"network"`
@@ -804,13 +804,14 @@ func (r *InstanceGPU) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Hypervisor running this instance
+// Hypervisor backend running this instance
 type InstanceHypervisor string
 
 const (
 	InstanceHypervisorCloudHypervisor InstanceHypervisor = "cloud-hypervisor"
 	InstanceHypervisorFirecracker     InstanceHypervisor = "firecracker"
 	InstanceHypervisorQemu            InstanceHypervisor = "qemu"
+	InstanceHypervisorQemuMicrovm     InstanceHypervisor = "qemu-microvm"
 	InstanceHypervisorVz              InstanceHypervisor = "vz"
 )
 
@@ -1454,9 +1455,12 @@ type InstanceNewParams struct {
 	// Workload health check policy. Health is reported separately from instance
 	// lifecycle state.
 	HealthCheck HealthCheckParam `json:"health_check,omitzero"`
-	// Hypervisor to use for this instance. Defaults to server configuration.
+	// Hypervisor backend to use for this instance. qemu uses the architecture-native
+	// standard board; qemu-microvm uses QEMU's minimal Linux amd64 board and does not
+	// support PCI devices, hotplug memory, or more than eight virtio-mmio devices.
+	// Defaults to server configuration.
 	//
-	// Any of "cloud-hypervisor", "firecracker", "qemu", "vz".
+	// Any of "cloud-hypervisor", "firecracker", "qemu", "qemu-microvm", "vz".
 	Hypervisor InstanceNewParamsHypervisor `json:"hypervisor,omitzero"`
 	// Network configuration for the instance
 	Network InstanceNewParamsNetwork `json:"network,omitzero"`
@@ -1567,13 +1571,17 @@ func (r *InstanceNewParamsGPU) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Hypervisor to use for this instance. Defaults to server configuration.
+// Hypervisor backend to use for this instance. qemu uses the architecture-native
+// standard board; qemu-microvm uses QEMU's minimal Linux amd64 board and does not
+// support PCI devices, hotplug memory, or more than eight virtio-mmio devices.
+// Defaults to server configuration.
 type InstanceNewParamsHypervisor string
 
 const (
 	InstanceNewParamsHypervisorCloudHypervisor InstanceNewParamsHypervisor = "cloud-hypervisor"
 	InstanceNewParamsHypervisorFirecracker     InstanceNewParamsHypervisor = "firecracker"
 	InstanceNewParamsHypervisorQemu            InstanceNewParamsHypervisor = "qemu"
+	InstanceNewParamsHypervisorQemuMicrovm     InstanceNewParamsHypervisor = "qemu-microvm"
 	InstanceNewParamsHypervisorVz              InstanceNewParamsHypervisor = "vz"
 )
 

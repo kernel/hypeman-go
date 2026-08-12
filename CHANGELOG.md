@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.24.0](https://github.com/kernel/hypeman-go/compare/v0.23.0...v0.24.0) (2026-08-12)
+
+
+### Features
+
+* Add QEMU microvm hypervisor backend ([f8a5d45](https://github.com/kernel/hypeman-go/commit/f8a5d4586ff9c812b8b5f0aa342bb0b7b47bd3dc))
+* Add request header authorization to ingress rules ([fb25cdc](https://github.com/kernel/hypeman-go/commit/fb25cdc43a87da159d80da7560d87e300754907a))
+* chore(stlc): seal custom-code tracking files ([f89533d](https://github.com/kernel/hypeman-go/commit/f89533d396385abb4ea110bb33266e006f44a46a))
+
 ## 0.23.0 (2026-08-06)
 
 Full Changelog: [v0.22.0...v0.23.0](https://github.com/kernel/hypeman-go/compare/v0.22.0...v0.23.0)

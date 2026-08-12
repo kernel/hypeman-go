@@ -13,7 +13,7 @@ import (
 	"github.com/kernel/hypeman-go/option"
 )
 
-func TestIngressNewWithOptionalParams(t *testing.T) {
+func TestPushNewWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -26,27 +26,16 @@ func TestIngressNewWithOptionalParams(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Ingresses.New(context.TODO(), hypeman.IngressNewParams{
-		Name: "my-api-ingress",
-		Rules: []hypeman.IngressRuleParam{{
-			Match: hypeman.IngressMatchParam{
-				Hostname: "{instance}.example.com",
-				Port:     hypeman.Int(8080),
+	_, err := client.Pushes.New(context.TODO(), hypeman.PushNewParams{
+		CreatePushRequest: hypeman.CreatePushRequestParam{
+			Image:  "docker.io/library/alpine:latest",
+			Target: "123456789.dkr.ecr.us-east-1.amazonaws.com/myapp:v1",
+			Credentials: hypeman.PushCredentialsParam{
+				Password:      hypeman.String("password"),
+				RegistryToken: hypeman.String("registry_token"),
+				Username:      hypeman.String("username"),
 			},
-			Target: hypeman.IngressTargetParam{
-				Instance: "{instance}",
-				Port:     8080,
-			},
-			RedirectHTTP: hypeman.Bool(true),
-			RequestHeaderAuth: hypeman.IngressRuleRequestHeaderAuthParam{
-				Header: "X-Ingress-Verification",
-				Value:  "0123456789abcdef0123456789abcdef",
-			},
-			Tls: hypeman.Bool(true),
-		}},
-		Tags: map[string]string{
-			"team": "backend",
-			"env":  "staging",
+			Insecure: hypeman.Bool(true),
 		},
 	})
 	if err != nil {
@@ -58,7 +47,7 @@ func TestIngressNewWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestIngressListWithOptionalParams(t *testing.T) {
+func TestPushList(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -71,12 +60,7 @@ func TestIngressListWithOptionalParams(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Ingresses.List(context.TODO(), hypeman.IngressListParams{
-		Tags: map[string]string{
-			"team": "backend",
-			"env":  "staging",
-		},
-	})
+	_, err := client.Pushes.List(context.TODO())
 	if err != nil {
 		var apierr *hypeman.Error
 		if errors.As(err, &apierr) {
@@ -86,7 +70,7 @@ func TestIngressListWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestIngressDelete(t *testing.T) {
+func TestPushGet(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -99,30 +83,7 @@ func TestIngressDelete(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	err := client.Ingresses.Delete(context.TODO(), "id")
-	if err != nil {
-		var apierr *hypeman.Error
-		if errors.As(err, &apierr) {
-			t.Log(string(apierr.DumpRequest(true)))
-		}
-		t.Fatalf("err should be nil: %s", err.Error())
-	}
-}
-
-func TestIngressGet(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
-	baseURL := "http://localhost:4010"
-	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
-		baseURL = envURL
-	}
-	if !testutil.CheckTestServer(t, baseURL) {
-		return
-	}
-	client := hypeman.NewClient(
-		option.WithBaseURL(baseURL),
-		option.WithAPIKey("My API Key"),
-	)
-	_, err := client.Ingresses.Get(context.TODO(), "id")
+	_, err := client.Pushes.Get(context.TODO(), "id")
 	if err != nil {
 		var apierr *hypeman.Error
 		if errors.As(err, &apierr) {

@@ -236,3 +236,21 @@ Methods:
 - <code title="delete /builds/{id}">client.Builds.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#BuildService.Cancel">Cancel</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
 - <code title="get /builds/{id}/events">client.Builds.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#BuildService.Events">Events</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, query <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#BuildEventsParams">BuildEventsParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#BuildEvent">BuildEvent</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="get /builds/{id}">client.Builds.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#BuildService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Build">Build</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
+# Pushes
+
+Params Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#CreatePushRequestParam">CreatePushRequestParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#PushCredentialsParam">PushCredentialsParam</a>
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Push">Push</a>
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#PushStatus">PushStatus</a>
+
+Methods:
+
+- <code title="post /pushes">client.Pushes.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#PushService.New">New</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#PushNewParams">PushNewParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Push">Push</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /pushes">client.Pushes.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#PushService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>) (\*[]<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Push">Push</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /pushes/{id}">client.Pushes.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#PushService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Push">Push</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>

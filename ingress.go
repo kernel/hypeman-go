@@ -174,17 +174,19 @@ type IngressRule struct {
 	Target IngressTarget `json:"target" api:"required"`
 	// Auto-create HTTP to HTTPS redirect for this hostname (only applies when tls is
 	// enabled)
-	RedirectHTTP bool `json:"redirect_http"`
+	RedirectHTTP      bool                         `json:"redirect_http"`
+	RequestHeaderAuth IngressRuleRequestHeaderAuth `json:"request_header_auth"`
 	// Enable TLS termination (certificate auto-issued via ACME).
 	Tls bool `json:"tls"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Match        respjson.Field
-		Target       respjson.Field
-		RedirectHTTP respjson.Field
-		Tls          respjson.Field
-		ExtraFields  map[string]respjson.Field
-		raw          string
+		Match             respjson.Field
+		Target            respjson.Field
+		RedirectHTTP      respjson.Field
+		RequestHeaderAuth respjson.Field
+		Tls               respjson.Field
+		ExtraFields       map[string]respjson.Field
+		raw               string
 	} `json:"-"`
 }
 
@@ -203,6 +205,30 @@ func (r IngressRule) ToParam() IngressRuleParam {
 	return param.Override[IngressRuleParam](json.RawMessage(r.RawJSON()))
 }
 
+type IngressRuleRequestHeaderAuth struct {
+	// Dedicated request header that must match before proxying. Reserved
+	// authentication, cookie, host, framing, proxy, and hop-by-hop headers are not
+	// allowed.
+	Header string `json:"header" api:"required"`
+	// Exact header value required before proxying. This sensitive value is persisted
+	// and returned by the API like instance environment variables; clients should hide
+	// it by default.
+	Value string `json:"value" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Header      respjson.Field
+		Value       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r IngressRuleRequestHeaderAuth) RawJSON() string { return r.JSON.raw }
+func (r *IngressRuleRequestHeaderAuth) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // The properties Match, Target are required.
 type IngressRuleParam struct {
 	Match  IngressMatchParam  `json:"match,omitzero" api:"required"`
@@ -211,7 +237,8 @@ type IngressRuleParam struct {
 	// enabled)
 	RedirectHTTP param.Opt[bool] `json:"redirect_http,omitzero"`
 	// Enable TLS termination (certificate auto-issued via ACME).
-	Tls param.Opt[bool] `json:"tls,omitzero"`
+	Tls               param.Opt[bool]                   `json:"tls,omitzero"`
+	RequestHeaderAuth IngressRuleRequestHeaderAuthParam `json:"request_header_auth,omitzero"`
 	paramObj
 }
 
@@ -220,6 +247,27 @@ func (r IngressRuleParam) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *IngressRuleParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties Header, Value are required.
+type IngressRuleRequestHeaderAuthParam struct {
+	// Dedicated request header that must match before proxying. Reserved
+	// authentication, cookie, host, framing, proxy, and hop-by-hop headers are not
+	// allowed.
+	Header string `json:"header" api:"required"`
+	// Exact header value required before proxying. This sensitive value is persisted
+	// and returned by the API like instance environment variables; clients should hide
+	// it by default.
+	Value string `json:"value" api:"required"`
+	paramObj
+}
+
+func (r IngressRuleRequestHeaderAuthParam) MarshalJSON() (data []byte, err error) {
+	type shadow IngressRuleRequestHeaderAuthParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *IngressRuleRequestHeaderAuthParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
