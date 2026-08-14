@@ -153,6 +153,11 @@ type ImageNewParams struct {
 	// grammar is validated server-side and invalid values return 400 invalid_platform.
 	// Only os "linux" with arch amd64 or arm64 is accepted today.
 	Platform param.Opt[string] `json:"platform,omitzero"`
+	// Docker-style registry credentials borrowed for one image pull or push request.
+	// They remain in memory and are never persisted or logged. When omitted or empty,
+	// the server's own registry credentials are used. An interrupted credentialed
+	// operation must be retried with fresh credentials.
+	Credentials PushCredentialsParam `json:"credentials,omitzero"`
 	// User-defined key-value tags.
 	Tags map[string]string `json:"tags,omitzero"`
 	paramObj

@@ -75,8 +75,10 @@ type CreatePushRequestParam struct {
 	Target string `json:"target" api:"required"`
 	// Allow pushing to plain-HTTP registries
 	Insecure param.Opt[bool] `json:"insecure,omitzero"`
-	// Registry credentials borrowed for this push only. When omitted, the server's own
-	// registry credentials are used.
+	// Docker-style registry credentials borrowed for one image pull or push request.
+	// They remain in memory and are never persisted or logged. When omitted or empty,
+	// the server's own registry credentials are used. An interrupted credentialed
+	// operation must be retried with fresh credentials.
 	Credentials PushCredentialsParam `json:"credentials,omitzero"`
 	paramObj
 }
@@ -134,8 +136,10 @@ func (r *Push) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Registry credentials borrowed for this push only. When omitted, the server's own
-// registry credentials are used.
+// Docker-style registry credentials borrowed for one image pull or push request.
+// They remain in memory and are never persisted or logged. When omitted or empty,
+// the server's own registry credentials are used. An interrupted credentialed
+// operation must be retried with fresh credentials.
 type PushCredentialsParam struct {
 	// Registry password or access token
 	Password param.Opt[string] `json:"password,omitzero" format:"password"`

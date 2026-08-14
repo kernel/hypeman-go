@@ -27,7 +27,12 @@ func TestImageNewWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Images.New(context.TODO(), hypeman.ImageNewParams{
-		Name:     "docker.io/library/nginx:latest",
+		Name: "docker.io/library/nginx:latest",
+		Credentials: hypeman.PushCredentialsParam{
+			Password:      hypeman.String("password"),
+			RegistryToken: hypeman.String("registry_token"),
+			Username:      hypeman.String("username"),
+		},
 		Platform: hypeman.String("linux/amd64"),
 		Tags: map[string]string{
 			"team": "backend",
