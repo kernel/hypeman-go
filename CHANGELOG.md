@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.25.0](https://github.com/kernel/hypeman-go/compare/v0.24.0...v0.25.0) (2026-08-17)
+
+
+### Features
+
+* add Python SDK WebSocket primitives ([7f21c67](https://github.com/kernel/hypeman-go/commit/7f21c67d750f6dd66c6b6af04e88c710841f2daf))
+* Point at pending stlc seal-tracking PRs ([913f5b9](https://github.com/kernel/hypeman-go/commit/913f5b9d8432fe6bd2f0c7af7aba16a71bfe1c5a))
+
 ## [0.24.0](https://github.com/kernel/hypeman-go/compare/v0.23.0...v0.24.0) (2026-08-12)
 
 
