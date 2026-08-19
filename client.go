@@ -17,18 +17,19 @@ import (
 // interacting with the hypeman API. You should not instantiate this client
 // directly, and instead use the [NewClient] method instead.
 type Client struct {
-	Options   []option.RequestOption
-	Health    HealthService
-	Images    ImageService
-	Instances InstanceService
-	Snapshots SnapshotService
-	Volumes   VolumeService
-	Devices   DeviceService
-	Ingresses IngressService
-	Resources ResourceService
-	Builders  BuilderService
-	Builds    BuildService
-	Pushes    PushService
+	Options      []option.RequestOption
+	Health       HealthService
+	Capabilities CapabilityService
+	Images       ImageService
+	Instances    InstanceService
+	Snapshots    SnapshotService
+	Volumes      VolumeService
+	Devices      DeviceService
+	Ingresses    IngressService
+	Resources    ResourceService
+	Builders     BuilderService
+	Builds       BuildService
+	Pushes       PushService
 }
 
 // DefaultClientOptions read from the environment (HYPEMAN_API_KEY,
@@ -62,6 +63,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r = Client{Options: opts}
 
 	r.Health = NewHealthService(opts...)
+	r.Capabilities = NewCapabilityService(opts...)
 	r.Images = NewImageService(opts...)
 	r.Instances = NewInstanceService(opts...)
 	r.Snapshots = NewSnapshotService(opts...)
