@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.0](https://github.com/kernel/hypeman-go/compare/v0.25.0...v0.26.0) (2026-08-21)
+
+
+### Features
+
+* Repair SDK tracking generation ([ea5a7f8](https://github.com/kernel/hypeman-go/commit/ea5a7f8d0d069b51e10189a8d0196f6155aaa4a8))
+
 ## [0.25.0](https://github.com/kernel/hypeman-go/compare/v0.24.0...v0.25.0) (2026-08-17)
 
 
