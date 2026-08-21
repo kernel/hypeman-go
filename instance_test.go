@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/kernel/hypeman-go"
 	"github.com/kernel/hypeman-go/internal/testutil"
@@ -58,6 +59,7 @@ func TestInstanceNewWithOptionalParams(t *testing.T) {
 			"PORT":     "3000",
 			"NODE_ENV": "production",
 		},
+		ExpiresAt: hypeman.Time(time.Now()),
 		GPU: hypeman.InstanceNewParamsGPU{
 			Profile: hypeman.String("L40S-1Q"),
 		},
@@ -118,6 +120,7 @@ func TestInstanceNewWithOptionalParams(t *testing.T) {
 			"team": "backend",
 			"env":  "staging",
 		},
+		Ttl:   hypeman.String("24h"),
 		Vcpus: hypeman.Int(2),
 		Volumes: []hypeman.VolumeMountParam{{
 			MountPath:   "/mnt/data",
@@ -162,6 +165,7 @@ func TestInstanceUpdateWithOptionalParams(t *testing.T) {
 			Env: map[string]string{
 				"OUTBOUND_OPENAI_KEY": "new-rotated-key-456",
 			},
+			ExpiresAt: hypeman.Time(time.Now()),
 			HealthCheck: hypeman.HealthCheckParam{
 				Exec: hypeman.HealthCheckExecParam{
 					Command:    []string{"curl", "-f", "http://localhost:4318/"},
@@ -189,6 +193,7 @@ func TestInstanceUpdateWithOptionalParams(t *testing.T) {
 				Policy:      hypeman.RestartPolicyPolicyOnFailure,
 				StableAfter: hypeman.String("10m"),
 			},
+			Ttl: hypeman.String("6h"),
 		},
 	)
 	if err != nil {

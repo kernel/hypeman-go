@@ -274,9 +274,9 @@ func (r *IngressRuleRequestHeaderAuthParam) UnmarshalJSON(data []byte) error {
 type IngressTarget struct {
 	// Target instance name, ID, or capture reference.
 	//
-	//   - For literal hostnames: Use the instance name or ID directly (e.g., "my-api")
-	//   - For pattern hostnames: Reference a capture from the hostname (e.g.,
-	//     "{instance}")
+	// - For literal hostnames: Use the instance name or ID directly (e.g., "my-api")
+	// - For pattern hostnames: Reference a capture from the hostname (e.g.,
+	//   "{instance}")
 	//
 	// When using pattern hostnames, the instance is resolved dynamically at request
 	// time.
@@ -311,9 +311,9 @@ func (r IngressTarget) ToParam() IngressTargetParam {
 type IngressTargetParam struct {
 	// Target instance name, ID, or capture reference.
 	//
-	//   - For literal hostnames: Use the instance name or ID directly (e.g., "my-api")
-	//   - For pattern hostnames: Reference a capture from the hostname (e.g.,
-	//     "{instance}")
+	// - For literal hostnames: Use the instance name or ID directly (e.g., "my-api")
+	// - For pattern hostnames: Reference a capture from the hostname (e.g.,
+	//   "{instance}")
 	//
 	// When using pattern hostnames, the instance is resolved dynamically at request
 	// time.
