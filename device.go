@@ -128,10 +128,10 @@ type Device struct {
 	// Whether the device is currently bound to the vfio-pci driver, which is required
 	// for VM passthrough.
 	//
-	//   - true: Device is bound to vfio-pci and ready for (or currently in use by) a VM.
-	//     The device's native driver has been unloaded.
-	//   - false: Device is using its native driver (e.g., nvidia) or no driver. Hypeman
-	//     will automatically bind to vfio-pci when attaching to an instance.
+	// - true: Device is bound to vfio-pci and ready for (or currently in use by) a VM.
+	//   The device's native driver has been unloaded.
+	// - false: Device is using its native driver (e.g., nvidia) or no driver. Hypeman
+	//   will automatically bind to vfio-pci when attaching to an instance.
 	BoundToVfio bool `json:"bound_to_vfio" api:"required"`
 	// Registration timestamp (RFC3339)
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`

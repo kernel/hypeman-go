@@ -58,9 +58,8 @@ func (r *InstanceService) New(ctx context.Context, body InstanceNewParams, opts 
 	return res, err
 }
 
-// Update mutable properties of a running instance. Currently supports updating
-// only the environment variables referenced by existing credential policies,
-// enabling secret/key rotation without instance restart.
+// Update mutable instance properties. TTL values are relative to when the update
+// is committed. Expiration updates are rejected after the current deadline passes.
 func (r *InstanceService) Update(ctx context.Context, id string, body InstanceUpdateParams, opts ...option.RequestOption) (res *Instance, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
@@ -635,6 +634,9 @@ type Instance struct {
 	ID string `json:"id" api:"required"`
 	// Creation timestamp (RFC3339)
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
+	// Absolute expiration time, or null when automatic expiration is disabled.
+	// Instance TTL is cleared on fork.
+	ExpiresAt time.Time `json:"expires_at" api:"required" format:"date-time"`
 	// OCI image reference
 	Image string `json:"image" api:"required"`
 	// Human-readable name
@@ -719,6 +721,7 @@ type Instance struct {
 	JSON struct {
 		ID                respjson.Field
 		CreatedAt         respjson.Field
+		ExpiresAt         respjson.Field
 		Image             respjson.Field
 		Name              respjson.Field
 		State             respjson.Field
@@ -1409,6 +1412,9 @@ type InstanceNewParams struct {
 	// Disk I/O rate limit (e.g., "100MB/s", "500MB/s"). Defaults to proportional share
 	// based on CPU allocation if configured.
 	DiskIoBps param.Opt[string] `json:"disk_io_bps,omitzero"`
+	// Absolute expiration time. Must be in the future and is mutually exclusive with
+	// ttl.
+	ExpiresAt param.Opt[time.Time] `json:"expires_at,omitzero" format:"date-time"`
 	// Additional memory for hotplug (human-readable format like "3GB", "1G"). Omit to
 	// disable hotplug memory.
 	HotplugSize param.Opt[string] `json:"hotplug_size,omitzero"`
@@ -1430,6 +1436,10 @@ type InstanceNewParams struct {
 	// out-of-tree kernel modules (e.g., NVIDIA vGPU drivers). Recommended for
 	// workloads that don't need kernel module compilation.
 	SkipKernelHeaders param.Opt[bool] `json:"skip_kernel_headers,omitzero"`
+	// Relative lifetime from instance creation, in Go duration format. Use "0s" or
+	// omit both expiration fields to disable automatic expiration. Mutually exclusive
+	// with expires_at.
+	Ttl param.Opt[string] `json:"ttl,omitzero"`
 	// Number of virtual CPUs
 	Vcpus param.Opt[int64] `json:"vcpus,omitzero"`
 	// Linux-only automatic standby policy based on active inbound TCP connections
@@ -1656,6 +1666,12 @@ func init() {
 }
 
 type InstanceUpdateParams struct {
+	// Absolute expiration time. Must be in the future and is mutually exclusive with
+	// ttl.
+	ExpiresAt param.Opt[time.Time] `json:"expires_at,omitzero" format:"date-time"`
+	// Relative lifetime from when this update is committed, in Go duration format. Use
+	// "0s" to disable automatic expiration. Mutually exclusive with expires_at.
+	Ttl param.Opt[string] `json:"ttl,omitzero"`
 	// Linux-only automatic standby policy based on active inbound TCP connections
 	// observed from the host conntrack table.
 	AutoStandby AutoStandbyPolicyParam `json:"auto_standby,omitzero"`
