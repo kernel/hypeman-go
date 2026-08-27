@@ -62,7 +62,7 @@ func (r *ImageService) Delete(ctx context.Context, name string, opts ...option.R
 		err = errors.New("missing required name parameter")
 		return err
 	}
-	path := fmt.Sprintf("images/%s", name)
+	path := fmt.Sprintf("images/%s", url.PathEscape(name))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
 	return err
 }
@@ -74,7 +74,7 @@ func (r *ImageService) Get(ctx context.Context, name string, opts ...option.Requ
 		err = errors.New("missing required name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("images/%s", name)
+	path := fmt.Sprintf("images/%s", url.PathEscape(name))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
