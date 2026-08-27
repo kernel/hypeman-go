@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.26.1 (2026-08-27)
+
+Full Changelog: [v0.26.0...v0.26.1](https://github.com/kernel/hypeman-go/compare/v0.26.0...v0.26.1)
+
 ## [0.26.0](https://github.com/kernel/hypeman-go/compare/v0.25.0...v0.26.0) (2026-08-21)
 
 
