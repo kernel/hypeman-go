@@ -234,7 +234,7 @@ func TestInstanceListWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestInstanceDelete(t *testing.T) {
+func TestInstanceDeleteWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -247,7 +247,13 @@ func TestInstanceDelete(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	err := client.Instances.Delete(context.TODO(), "id")
+	err := client.Instances.Delete(
+		context.TODO(),
+		"id",
+		hypeman.InstanceDeleteParams{
+			GracefulShutdown: hypeman.Bool(true),
+		},
+	)
 	if err != nil {
 		var apierr *hypeman.Error
 		if errors.As(err, &apierr) {
