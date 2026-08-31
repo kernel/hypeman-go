@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.0](https://github.com/kernel/hypeman-go/compare/v0.26.1...v0.27.0) (2026-08-31)
+
+
+### Features
+
+* Allow skipping graceful shutdown on instance delete ([013dac9](https://github.com/kernel/hypeman-go/commit/013dac97bc8391d82f4b583f1a579c3024f23f88))
+
 ## 0.26.1 (2026-08-27)
 
 Full Changelog: [v0.26.0...v0.26.1](https://github.com/kernel/hypeman-go/compare/v0.26.0...v0.26.1)

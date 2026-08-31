@@ -80,7 +80,7 @@ func (r *InstanceService) List(ctx context.Context, query InstanceListParams, op
 }
 
 // Stop and delete instance
-func (r *InstanceService) Delete(ctx context.Context, id string, opts ...option.RequestOption) (err error) {
+func (r *InstanceService) Delete(ctx context.Context, id string, body InstanceDeleteParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
@@ -88,7 +88,7 @@ func (r *InstanceService) Delete(ctx context.Context, id string, opts ...option.
 		return err
 	}
 	path := fmt.Sprintf("instances/%s", id)
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, body, nil, opts...)
 	return err
 }
 
@@ -1729,6 +1729,20 @@ const (
 	InstanceListParamsStateStandby      InstanceListParamsState = "Standby"
 	InstanceListParamsStateUnknown      InstanceListParamsState = "Unknown"
 )
+
+type InstanceDeleteParams struct {
+	// Whether to attempt graceful guest shutdown before deleting the instance
+	GracefulShutdown param.Opt[bool] `query:"graceful_shutdown,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [InstanceDeleteParams]'s query parameters as `url.Values`.
+func (r InstanceDeleteParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
+}
 
 type InstanceForkParams struct {
 	// Name for the forked instance (lowercase letters, digits, and dashes only; cannot
