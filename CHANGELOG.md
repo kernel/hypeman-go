@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.28.0](https://github.com/kernel/hypeman-go/compare/v0.27.0...v0.28.0) (2026-09-01)
+
+
+### Features
+
+* Add local image tagging on shared content storage ([bfd38ed](https://github.com/kernel/hypeman-go/commit/bfd38eda3b8207bde8198dcb3b1f208d4e965c86))
+
 ## [0.27.0](https://github.com/kernel/hypeman-go/compare/v0.26.1...v0.27.0) (2026-08-31)
 
 

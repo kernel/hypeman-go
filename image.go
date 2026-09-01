@@ -13,6 +13,7 @@ import (
 
 	"github.com/kernel/hypeman-go/internal/apijson"
 	"github.com/kernel/hypeman-go/internal/apiquery"
+	shimjson "github.com/kernel/hypeman-go/internal/encoding/json"
 	"github.com/kernel/hypeman-go/internal/requestconfig"
 	"github.com/kernel/hypeman-go/option"
 	"github.com/kernel/hypeman-go/packages/param"
@@ -76,6 +77,18 @@ func (r *ImageService) Get(ctx context.Context, name string, opts ...option.Requ
 	}
 	path := fmt.Sprintf("images/%s", url.PathEscape(name))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
+// Create or update a local image tag
+func (r *ImageService) Tag(ctx context.Context, name string, body ImageTagParams, opts ...option.RequestOption) (res *Image, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if name == "" {
+		err = errors.New("missing required name parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("images/%s/tag", name)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
 
@@ -145,6 +158,22 @@ const (
 	ImageStatusFailed     ImageStatus = "failed"
 )
 
+// The property Target is required.
+type TagImageRequestParam struct {
+	// Target OCI image reference with a tag. The local tag points to the source image
+	// without pulling it again.
+	Target string `json:"target" api:"required"`
+	paramObj
+}
+
+func (r TagImageRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow TagImageRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *TagImageRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type ImageNewParams struct {
 	// OCI image reference (e.g., docker.io/library/nginx:latest)
 	Name string `json:"name" api:"required"`
@@ -183,4 +212,16 @@ func (r ImageListParams) URLQuery() (v url.Values, err error) {
 		ArrayFormat:  apiquery.ArrayQueryFormatComma,
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
+}
+
+type ImageTagParams struct {
+	TagImageRequest TagImageRequestParam
+	paramObj
+}
+
+func (r ImageTagParams) MarshalJSON() (data []byte, err error) {
+	return shimjson.Marshal(r.TagImageRequest)
+}
+func (r *ImageTagParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }

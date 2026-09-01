@@ -34,6 +34,10 @@ Methods:
 
 # Images
 
+Params Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#TagImageRequestParam">TagImageRequestParam</a>
+
 Response Types:
 
 - <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Image">Image</a>
@@ -44,6 +48,7 @@ Methods:
 - <code title="get /images">client.Images.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#ImageService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#ImageListParams">ImageListParams</a>) (\*[]<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Image">Image</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="delete /images/{name}">client.Images.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#ImageService.Delete">Delete</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, name <a href="https://pkg.go.dev/builtin#string">string</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
 - <code title="get /images/{name}">client.Images.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#ImageService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, name <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Image">Image</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="post /images/{name}/tag">client.Images.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#ImageService.Tag">Tag</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, name <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#ImageTagParams">ImageTagParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/hypeman-go">hypeman</a>.<a href="https://pkg.go.dev/github.com/kernel/hypeman-go#Image">Image</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
 # Instances
 
