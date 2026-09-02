@@ -788,12 +788,15 @@ const (
 
 // GPU information attached to the instance
 type InstanceGPU struct {
-	// mdev device UUID
+	// sysfs path of the assigned vGPU device
+	DevicePath string `json:"device_path"`
+	// mdev device UUID (mdev hosts only)
 	MdevUuid string `json:"mdev_uuid"`
 	// vGPU profile name
 	Profile string `json:"profile"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		DevicePath  respjson.Field
 		MdevUuid    respjson.Field
 		Profile     respjson.Field
 		ExtraFields map[string]respjson.Field
