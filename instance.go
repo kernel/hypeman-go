@@ -1793,7 +1793,7 @@ type InstanceLogsParams struct {
 	// - vmm: Cloud Hypervisor VMM logs (hypervisor stdout+stderr)
 	// - hypeman: Hypeman operations log (actions taken on this instance)
 	//
-	// Any of "app", "vmm", "hypeman".
+	// Any of "app", "vmm", "hypeman", "swtpm".
 	Source InstanceLogsParamsSource `query:"source,omitzero" json:"-"`
 	paramObj
 }
@@ -1817,6 +1817,7 @@ const (
 	InstanceLogsParamsSourceApp     InstanceLogsParamsSource = "app"
 	InstanceLogsParamsSourceVmm     InstanceLogsParamsSource = "vmm"
 	InstanceLogsParamsSourceHypeman InstanceLogsParamsSource = "hypeman"
+	InstanceLogsParamsSourceSwtpm   InstanceLogsParamsSource = "swtpm"
 )
 
 type InstanceStandbyParams struct {
