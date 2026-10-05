@@ -788,12 +788,15 @@ const (
 
 // GPU information attached to the instance
 type InstanceGPU struct {
-	// mdev device UUID
+	// sysfs path of the assigned vGPU device
+	DevicePath string `json:"device_path"`
+	// mdev device UUID (mdev hosts only)
 	MdevUuid string `json:"mdev_uuid"`
 	// vGPU profile name
 	Profile string `json:"profile"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		DevicePath  respjson.Field
 		MdevUuid    respjson.Field
 		Profile     respjson.Field
 		ExtraFields map[string]respjson.Field
@@ -1790,7 +1793,7 @@ type InstanceLogsParams struct {
 	// - vmm: Cloud Hypervisor VMM logs (hypervisor stdout+stderr)
 	// - hypeman: Hypeman operations log (actions taken on this instance)
 	//
-	// Any of "app", "vmm", "hypeman".
+	// Any of "app", "vmm", "hypeman", "swtpm".
 	Source InstanceLogsParamsSource `query:"source,omitzero" json:"-"`
 	paramObj
 }
@@ -1814,6 +1817,7 @@ const (
 	InstanceLogsParamsSourceApp     InstanceLogsParamsSource = "app"
 	InstanceLogsParamsSourceVmm     InstanceLogsParamsSource = "vmm"
 	InstanceLogsParamsSourceHypeman InstanceLogsParamsSource = "hypeman"
+	InstanceLogsParamsSourceSwtpm   InstanceLogsParamsSource = "swtpm"
 )
 
 type InstanceStandbyParams struct {

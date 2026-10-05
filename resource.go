@@ -83,7 +83,9 @@ func (r *DiskBreakdown) UnmarshalJSON(data []byte) error {
 
 // Available vGPU profile
 type GPUProfile struct {
-	// Number of instances that can be created with this profile
+	// Number of virtual functions currently able to create this profile. Best-effort:
+	// creating an instance may reduce availability on sibling functions sharing GPU
+	// framebuffer.
 	Available int64 `json:"available" api:"required"`
 	// Frame buffer size in MB
 	FramebufferMB int64 `json:"framebuffer_mb" api:"required"`
