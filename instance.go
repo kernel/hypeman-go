@@ -918,7 +918,8 @@ type InstanceStats struct {
 	MemoryRssBytes int64 `json:"memory_rss_bytes" api:"required"`
 	// Virtual Memory Size - total virtual memory allocated in bytes
 	MemoryVmsBytes int64 `json:"memory_vms_bytes" api:"required"`
-	// Total network bytes received by the VM (from TAP interface)
+	// Total network bytes received by the VM (from TAP interface). Always 0 for macOS
+	// guests, which use NAT with no per-instance interface.
 	NetworkRxBytes int64 `json:"network_rx_bytes" api:"required"`
 	// Total network bytes transmitted by the VM (from TAP interface)
 	NetworkTxBytes int64 `json:"network_tx_bytes" api:"required"`
@@ -1421,14 +1422,17 @@ type InstanceNewParams struct {
 	// Additional memory for hotplug (human-readable format like "3GB", "1G"). Omit to
 	// disable hotplug memory.
 	HotplugSize param.Opt[string] `json:"hotplug_size,omitzero"`
-	// Writable overlay disk size (human-readable format like "10GB", "50G")
+	// Writable overlay disk size (human-readable format like "10GB", "50G"). Omit this
+	// field for macOS guests, which clone the image's complete boot disk instead.
 	OverlaySize param.Opt[string] `json:"overlay_size,omitzero"`
-	// Target platform as os/arch[/variant] (e.g. "linux/amd64"), matching Docker
-	// --platform. Omit for the host platform. Not a fixed enum: the os/arch[/variant]
-	// grammar is validated server-side and invalid values return 400 invalid_platform.
-	// Only os "linux" with arch amd64 or arm64 is accepted today.
+	// Target platform as os/arch[/variant]. Linux container guests support amd64 and
+	// arm64. Experimental darwin/arm64 guests require an offline-imported macOS disk
+	// image and vz on Apple silicon. Omit to use the cached native image or host
+	// platform.
 	Platform param.Opt[string] `json:"platform,omitzero"`
-	// Base memory size (human-readable format like "1GB", "512MB", "2G")
+	// Base memory size (human-readable format like "1GB", "512MB", "2G"). macOS guests
+	// default to their image's memory; explicit sizes must be at least 4 GiB in whole
+	// MiB and within VZ host limits.
 	Size param.Opt[string] `json:"size,omitzero"`
 	// Skip guest-agent installation during boot. When true, the exec and stat APIs
 	// will not work for this instance. The instance will still run, but remote command
@@ -1443,7 +1447,8 @@ type InstanceNewParams struct {
 	// omit both expiration fields to disable automatic expiration. Mutually exclusive
 	// with expires_at.
 	Ttl param.Opt[string] `json:"ttl,omitzero"`
-	// Number of virtual CPUs
+	// Number of virtual CPUs. macOS guests default to their image's vCPUs; explicit
+	// counts must be at least 2 and within VZ host limits.
 	Vcpus param.Opt[int64] `json:"vcpus,omitzero"`
 	// Linux-only automatic standby policy based on active inbound TCP connections
 	// observed from the host conntrack table.

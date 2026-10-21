@@ -109,27 +109,41 @@ func (r *GPUProfile) UnmarshalJSON(data []byte) error {
 
 // GPU resource status. Null if no GPUs available.
 type GPUResourceStatus struct {
+	// Free slots eligible for placement, matching admission control (excludes
+	// quarantined VFs; 0 while VF health state is unavailable)
+	AllocatableSlots int64 `json:"allocatable_slots" api:"required"`
 	// GPU mode (vgpu for SR-IOV/mdev, passthrough for whole GPU)
 	//
 	// Any of "vgpu", "passthrough".
 	Mode GPUResourceStatusMode `json:"mode" api:"required"`
+	// VFs quarantined after guest driver init failures (vGPU mode only). May overlap
+	// used_slots until the affected instance releases its VF.
+	QuarantinedSlots int64 `json:"quarantined_slots" api:"required"`
 	// Total slots (VFs for vGPU, physical GPUs for passthrough)
 	TotalSlots int64 `json:"total_slots" api:"required"`
-	// Slots currently in use
+	// Slots currently in use. Includes quarantined VFs that are still assigned, so
+	// this can overlap quarantined_slots.
 	UsedSlots int64 `json:"used_slots" api:"required"`
 	// Physical GPUs (only in passthrough mode)
 	Devices []PassthroughDevice `json:"devices"`
+	// Present when allocatable_slots is 0 because the VF health state could not be
+	// read or written rather than because the host is full. vGPU placement is refused
+	// until the state file is repaired or the next write succeeds.
+	PlacementDisabledReason string `json:"placement_disabled_reason"`
 	// Available vGPU profiles (only in vGPU mode)
 	Profiles []GPUProfile `json:"profiles"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Mode        respjson.Field
-		TotalSlots  respjson.Field
-		UsedSlots   respjson.Field
-		Devices     respjson.Field
-		Profiles    respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		AllocatableSlots        respjson.Field
+		Mode                    respjson.Field
+		QuarantinedSlots        respjson.Field
+		TotalSlots              respjson.Field
+		UsedSlots               respjson.Field
+		Devices                 respjson.Field
+		PlacementDisabledReason respjson.Field
+		Profiles                respjson.Field
+		ExtraFields             map[string]respjson.Field
+		raw                     string
 	} `json:"-"`
 }
 
