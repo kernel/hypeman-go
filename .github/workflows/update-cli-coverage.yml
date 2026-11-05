@@ -1,9 +1,9 @@
 name: Update CLI Coverage
 
 on:
-  push:
-    branches: 
-    - main
+  # A push to main can run before release-please tags the release.
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       pr_number:
@@ -11,31 +11,42 @@ on:
         required: false
         type: string
 
-# Only run one instance at a time; cancel older runs when a new push arrives
-concurrency:
-  group: update-cli-coverage
-  cancel-in-progress: true
-
 permissions:
   contents: read
+  pull-requests: read
+
+concurrency:
+  group: update-cli-coverage
+  cancel-in-progress: false
 
 jobs:
-  update-cli-coverage:
+  generate:
+    if: github.repository == 'kernel/hypeman-go'
     runs-on: ubuntu-latest
+    timeout-minutes: 55
+    outputs:
+      changed: ${{ steps.snapshot.outputs.changed }}
+      main_sha: ${{ steps.cli-clone.outputs.main_sha }}
+      update_sha: ${{ steps.cli-clone.outputs.update_sha }}
+      rebased: ${{ steps.cli-clone.outputs.rebased }}
+      agent_base_tree: ${{ steps.cli-clone.outputs.agent_base_tree }}
+      version: ${{ steps.sdk-version.outputs.version }}
     steps:
-      - name: Generate app token
-        id: app-token
-        uses: actions/create-github-app-token@v1
+      - name: Generate API read token
+        id: api-read-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
         with:
           app-id: ${{ secrets.ADMIN_APP_ID }}
           private-key: ${{ secrets.ADMIN_APP_PRIVATE_KEY }}
           owner: kernel
+          repositories: hypeman
+          permission-contents: read
 
       - name: Get PR info for manual dispatch
         id: pr-info
         if: github.event_name == 'workflow_dispatch'
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ -n "${{ inputs.pr_number }}" ]; then
             # Use provided PR number
@@ -68,24 +79,32 @@ jobs:
           fi
 
       - name: Checkout SDK repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          fetch-depth: 2
-          fetch-tags: true
+          persist-credentials: false
+          # The SDK diff starts at CLI main's version, which can be several tags back.
+          fetch-depth: 0
           # For manual dispatch with a specific PR, checkout the merge commit
           ref: ${{ steps.pr-info.outputs.merge_sha || github.sha }}
 
-      - name: Install Cursor CLI
-        run: |
-          curl https://cursor.com/install -fsS | bash
-          echo "$HOME/.cursor/bin" >> $GITHUB_PATH
+      - name: Checkout updater scripts
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          path: updater
+          sparse-checkout: .github/scripts
+          persist-credentials: false
 
-      - name: Enable Cursor Max Mode
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+
+      - name: Install Pi
+        env:
+          PI_TELEMETRY: '0'
         run: |
-          CFG_DIR="$HOME/.cursor"
-          mkdir -p "$CFG_DIR"
-          echo '{"maxMode": true}' > "$CFG_DIR/cli-config.json"
-          echo "CURSOR_CONFIG_DIR=$CFG_DIR" >> "$GITHUB_ENV"
+          npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+          pi --version
 
       - name: Configure git identity
         run: |
@@ -93,39 +112,54 @@ jobs:
           git config --global user.email "260533166+kernel-internal[bot]@users.noreply.github.com"
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: 'stable'
 
-      - name: Clone API repo
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      - name: Clone CLI repo
+        id: cli-clone
         run: |
-          gh repo clone kernel/hypeman /tmp/hypeman -- --depth=1
-
-      - name: Clone CLI repo and checkout existing branch
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          gh repo clone kernel/hypeman-cli /tmp/hypeman-cli
+          git clone https://github.com/kernel/hypeman-cli.git /tmp/hypeman-cli
           cd /tmp/hypeman-cli
-
-          # Try to fetch the cli-coverage-update branch from remote
-          if git fetch origin cli-coverage-update 2>/dev/null; then
-            echo "Branch cli-coverage-update exists, checking it out..."
-            git checkout cli-coverage-update
-            # Merge latest main to keep it up to date
-            git merge origin/main -m "Merge main into cli-coverage-update" --no-edit || true
+          git config user.name "kernel-internal[bot]"
+          git config user.email "260533166+kernel-internal[bot]@users.noreply.github.com"
+          echo "main_sha=$(git rev-parse origin/main)" >> "$GITHUB_OUTPUT"
+          if git show-ref --verify --quiet refs/remotes/origin/cli-coverage-update; then
+            echo "update_sha=$(git rev-parse origin/cli-coverage-update)" >> "$GITHUB_OUTPUT"
+            git switch --track origin/cli-coverage-update
+            if ! git rebase origin/main; then
+              git rebase --abort
+              # The agent covers everything since main's SDK version, so a bot-only
+              # branch can be regenerated from main. Human commits must be kept.
+              # The last two identities are from the previous agent CLI's runs.
+              if git log --no-merges --format=%ae origin/main..origin/cli-coverage-update \
+                | grep -qvxF \
+                  -e '260533166+kernel-internal[bot]@users.noreply.github.com' \
+                  -e 'kernel-internal[bot]@users.noreply.github.com' \
+                  -e 'cursor-agent@cursor.com'; then
+                echo "::error::cli-coverage-update has human commits that conflict with main. Resolve the conflicts on that branch, then rerun this workflow."
+                exit 1
+              fi
+              echo "::warning::cli-coverage-update conflicts with main; regenerating it from main."
+              git switch -C cli-coverage-update origin/main
+            else
+              echo "rebased=true" >> "$GITHUB_OUTPUT"
+            fi
           else
-            echo "Branch cli-coverage-update does not exist, creating from main..."
-            git checkout -b cli-coverage-update
+            git switch -c cli-coverage-update origin/main
           fi
+          # The agent's changes are published on top of this head, so human
+          # commits on the update branch keep their content and authorship.
+          echo "agent_base=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "agent_base_tree=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
 
       - name: Get SDK version info
         id: sdk-version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          # Get the latest tag if available, otherwise use commit SHA
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          # Use the published release, else the latest tag, else the commit SHA
+          LATEST_TAG=${RELEASE_TAG:-$(git describe --tags --abbrev=0 2>/dev/null || echo "")}
           if [ -n "$LATEST_TAG" ]; then
             echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
             echo "SDK version: $LATEST_TAG"
@@ -147,15 +181,89 @@ jobs:
             echo "author=${{ github.event.head_commit.author.username || github.actor }}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Compute SDK diff since CLI main's version
+        id: sdk-diff
+        run: |
+          # The report replaces the PR description, so audit every release since
+          # the SDK version on CLI main, not only the ones since the last run.
+          git -C /tmp/hypeman-cli show origin/main:go.mod > "$RUNNER_TEMP/cli-main-go.mod"
+          OLD_SDK_VERSION=$(go mod edit -json "$RUNNER_TEMP/cli-main-go.mod" \
+            | jq -er '.Require[] | select(.Path == "github.com/kernel/hypeman-go") | .Version')
+          echo "CLI main uses SDK version: $OLD_SDK_VERSION"
+          echo "old_version=$OLD_SDK_VERSION" >> $GITHUB_OUTPUT
+
+          NEW_SDK_VERSION="${{ steps.sdk-version.outputs.version }}"
+          echo "New SDK version: $NEW_SDK_VERSION"
+
+          # Compute the diff between old and new SDK versions
+          # This gives the agent a focused view of what changed
+          if git diff "$OLD_SDK_VERSION".."$NEW_SDK_VERSION" -- api.md '*.go' ':!*_test.go' ':!internal/*' > /tmp/sdk-diff.patch 2>/dev/null; then
+            DIFF_LINES=$(wc -l < /tmp/sdk-diff.patch)
+            echo "SDK diff: $DIFF_LINES lines"
+            if [ "$DIFF_LINES" -eq 0 ]; then
+              echo "No SDK changes between versions (diff is empty)"
+            fi
+          else
+            echo "Could not compute SDK diff (old version tag may not exist), creating empty diff"
+            echo "" > /tmp/sdk-diff.patch
+          fi
+
+          utc_date() {
+            TZ=UTC git log -1 --date=format-local:%Y-%m-%dT%H:%M:%SZ --format=%cd "$1"
+          }
+          echo "old_date=$(utc_date "$OLD_SDK_VERSION" 2>/dev/null || true)" >> $GITHUB_OUTPUT
+          echo "new_date=$(utc_date HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Fetch API spec
+        env:
+          GH_TOKEN: ${{ steps.api-read-token.outputs.token }}
+          OLD_DATE: ${{ steps.sdk-diff.outputs.old_date }}
+          NEW_DATE: ${{ steps.sdk-diff.outputs.new_date }}
+        run: |
+          main_at() {
+            gh api -X GET repos/kernel/hypeman/commits -f sha=main -f until="$1" -f per_page=1 --jq '.[0].sha // empty'
+          }
+          file_at() {
+            gh api -H 'Accept: application/vnd.github.raw' "repos/kernel/hypeman/contents/$1?ref=$2"
+          }
+          head=$(main_at "$NEW_DATE")
+          test -n "$head"
+          mkdir -p /tmp/hypeman
+          for file in openapi.yaml stainless.yaml; do
+            file_at "$file" "$head" > "/tmp/hypeman/$file"
+          done
+          base=""
+          if [[ -n "$OLD_DATE" ]]; then
+            base=$(main_at "$OLD_DATE")
+          fi
+          if [[ -n "$base" ]]; then
+            file_at openapi.yaml "$base" > "$RUNNER_TEMP/openapi-base.yaml"
+            diff -u --label "openapi.yaml@$base" --label "openapi.yaml@$head" \
+              "$RUNNER_TEMP/openapi-base.yaml" /tmp/hypeman/openapi.yaml \
+              > /tmp/openapi-diff.patch || [[ $? -eq 1 ]]
+            rm "$RUNNER_TEMP/openapi-base.yaml"
+          else
+            printf 'Spec baseline unavailable; compare all relevant descriptions in openapi.yaml.\n' > /tmp/openapi-diff.patch
+          fi
+          gh api --method DELETE /installation/token
+
       - name: Update CLI coverage
         env:
-          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PI_PREFERRED_MODEL: ${{ vars.PI_PREFERRED_MODEL }}
+          PI_SKIP_VERSION_CHECK: '1'
+          PI_TELEMETRY: '0'
           BRANCH_PREFIX: cli-coverage-update
         run: |
-          cursor-agent -p "You are a CLI updater that implements missing CLI commands based on SDK updates.
+          : "${PI_PREFERRED_MODEL:?Set the PI_PREFERRED_MODEL organization variable}"
+          mkdir -p "$RUNNER_TEMP/cli-scratch"
+          pi --print --no-session --approve \
+            --model "$PI_PREFERRED_MODEL" --thinking max \
+            "You are a CLI updater that implements missing CLI commands based on SDK updates.
 
-          The GitHub CLI is available as \`gh\` and authenticated via GH_TOKEN. Git is available. You have write access to the CLI repository (kernel/hypeman-cli).
+          Git is available for local diffs only. You have no GitHub publishing credentials.
+          Do not commit, push, open, or merge PRs. The workflow validates and publishes your changes.
 
           # Context
           - SDK Repo: ${{ github.repository }} (current directory)
@@ -164,18 +272,22 @@ jobs:
           - Commit SHA: ${{ steps.pr-info.outputs.merge_sha || github.sha }}
           - Commit Author: ${{ steps.sdk-version.outputs.author }}
           - Trigger: ${{ github.event_name }} ${{ inputs.pr_number && format('(PR #{0})', inputs.pr_number) || '' }}
-          - API Repo Location: /tmp/hypeman
+          - API Spec Location: /tmp/hypeman (openapi.yaml and stainless.yaml as of this SDK release)
           - CLI Repo Location: /tmp/hypeman-cli
           - Update Branch Prefix: cli-coverage-update
 
           # Background
           The Go SDK (this repo) was just updated by Stainless, and may contain new API methods. The CLI (kernel/hypeman-cli) needs to be updated to expose these new methods as CLI commands.
+          The CLI main branch is on SDK version ${{ steps.sdk-diff.outputs.old_version }}, and we are updating it to ${{ steps.sdk-version.outputs.version }}.
+          The update branch may already hold coverage from earlier runs for releases in between; keep it and build on it.
 
           # Source Files
           - SDK api.md: Current directory - READ THIS FILE FIRST. This is the authoritative list of all SDK methods and their signatures.
           - SDK *.go files: Current directory - Contains param structs (e.g., InstanceNewParams, ImageNewParams) with all available options/fields.
+          - SDK diff: /tmp/sdk-diff.patch - IMPORTANT: This is the diff of api.md and Go source files between the SDK version on CLI main (${{ steps.sdk-diff.outputs.old_version }}) and the new version (${{ steps.sdk-version.outputs.version }}). Read this file to see exactly what methods, params, and fields were added or changed. Any additions here MUST be reflected in the CLI.
           - API Spec: /tmp/hypeman/stainless.yaml - SDK configuration with resources and methods
           - API Spec: /tmp/hypeman/openapi.yaml - Full OpenAPI specification. CHECK for x-cli-skip: true on endpoints - skip those from CLI coverage.
+          - API Spec diff: /tmp/openapi-diff.patch - Spec changes between the SDK version on CLI main and the new one, including endpoint, parameter, and field description changes.
           - CLI: /tmp/hypeman-cli - Existing CLI commands (in pkg/cmd/ directory)
 
           # CLI Architecture
@@ -187,6 +299,7 @@ jobs:
           - Build commands: pkg/cmd/build.go
           - Utilities: pkg/cmd/cmdutil.go, pkg/cmd/format.go
           - Entry point: cmd/hypeman/main.go
+          - Compose support: lib/compose/ (also uses the SDK)
 
           # Task
 
@@ -197,21 +310,27 @@ jobs:
           - Run: go mod tidy
           - This ensures the CLI always uses the latest SDK, even if no new commands are added
 
-          ## Step 2: Full SDK Method Enumeration (CRITICAL - DO NOT SKIP)
-          You MUST perform a complete enumeration of ALL SDK methods and their parameters. Do NOT rely only on recent commits.
+          ## Step 2: Review SDK Diff (CRITICAL - DO THIS BEFORE THE FULL ENUMERATION)
+          Read /tmp/sdk-diff.patch to see exactly what changed in the SDK between the version on CLI main and the new version.
+          This diff shows new methods, new param fields, and changed signatures — these are the changes most likely to need CLI coverage.
+          Treat every addition in this diff as a checklist item: each new method needs a CLI command, each new param field needs a CLI flag.
+          After verifying these are covered, proceed to the full enumeration below to catch anything else.
 
-          2a. Read the api.md file in the SDK repo root. This file lists EVERY SDK method in the format:
+          ## Step 3: Full SDK Method Enumeration (CRITICAL - DO NOT SKIP)
+          You MUST perform a complete enumeration of ALL SDK methods and their parameters. Do NOT rely only on the diff from Step 2.
+
+          3a. Read the api.md file in the SDK repo root. This file lists EVERY SDK method in the format:
               - \`client.Resource.Method(ctx, params)\` with links to param types
               Extract a complete list of all methods.
 
-          2b. For EACH SDK method, read the corresponding param type from the Go source files.
+          3b. For EACH SDK method, read the corresponding param type from the Go source files.
               For example:
               - InstanceNewParams in instance.go -> lists all fields like \`Image\`, \`Region\`, \`VolumeMounts\`, etc.
               - ImageNewParams in image.go -> lists all fields like \`Name\`, \`Tag\`, etc.
               - VolumeNewParams in volume.go -> lists all fields like \`Name\`, \`Size\`, etc.
               Each field in a Params struct represents an option that could be a CLI flag.
 
-          2c. Build a complete SDK coverage matrix:
+          3c. Build a complete SDK coverage matrix:
               | SDK Method | SDK Param Type | SDK Param Fields |
               |------------|----------------|------------------|
               | client.Instances.New | InstanceNewParams | Image, Region, VolumeMounts, ... |
@@ -220,14 +339,14 @@ jobs:
               | client.Volumes.New | VolumeNewParams | Name, Size, ... |
               | ... | ... | ... |
 
-          ## Step 3: Full CLI Command Enumeration (CRITICAL - DO NOT SKIP)
+          ## Step 4: Full CLI Command Enumeration (CRITICAL - DO NOT SKIP)
           Enumerate ALL existing CLI commands and their flags.
 
-          3a. Look at pkg/cmd/ directory for existing command files
-          3b. For each command file, extract:
+          4a. Look at pkg/cmd/ directory for existing command files
+          4b. For each command file, extract:
               - The command name/path (e.g., \`hypeman run\`, \`hypeman image list\`)
               - All flags defined for that command
-          3c. Build a CLI coverage matrix:
+          4c. Build a CLI coverage matrix:
               | CLI Command | CLI Flags |
               |-------------|-----------|
               | hypeman run | --name, --image, --quiet, ... |
@@ -236,12 +355,13 @@ jobs:
               | hypeman volume create | --name, ... |
               | ... | ... |
 
-          ## Step 4: Gap Analysis (CRITICAL - DO NOT SKIP)
-          Compare the SDK matrix (Step 2) with the CLI matrix (Step 3) to identify:
+          ## Step 5: Gap Analysis (CRITICAL - DO NOT SKIP)
+          Compare the SDK matrix (Step 3) with the CLI matrix (Step 4) to identify:
 
-          4a. Missing commands: SDK methods with NO corresponding CLI command
-          4b. Missing flags: SDK param fields with NO corresponding CLI flag
-          4c. Create a gap report:
+          5a. Missing commands: SDK methods with NO corresponding CLI command
+          5b. Missing flags: SDK param fields with NO corresponding CLI flag
+          5c. Cross-check against the SDK diff from Step 2: every addition in /tmp/sdk-diff.patch MUST appear as a gap to address (new method = missing command, new param field = missing flag) unless it already exists in the CLI.
+          5d. Create a gap report:
               ## Missing Commands
               - client.SomeResource.SomeMethod -> needs new CLI command
 
@@ -249,20 +369,29 @@ jobs:
               - InstanceNewParams.SomeNewField -> \`hypeman run\` needs --some-new-field
               - VolumeNewParams.Region -> \`hypeman volume create\` needs --region
 
-          ## Step 5: Implement Missing Coverage
-          For each gap identified in Step 4:
+          ## Step 6: Implement Missing Coverage
+          For each gap identified in Step 5:
           - Implement missing commands following existing patterns in pkg/cmd/
           - Add missing flags to existing commands
           - Use urfave/cli/v3 for command and flag definitions (NOT cobra)
           - Run \`go build ./...\` to verify the code compiles
 
-          ## Step 6: Commit and Push
-          - You should already be on the cli-coverage-update branch (it was checked out during setup if it existed)
-          - If you're on main, create/switch to the cli-coverage-update branch
-          - Commit with message describing SDK version bump and any new commands/flags
-          - IMPORTANT: Do NOT force push! Use regular \`git push origin cli-coverage-update\` to preserve existing work on the branch
-          - If push fails due to divergence, pull and rebase first: \`git pull --rebase origin cli-coverage-update\`
-          - Create or update the PR in kernel/hypeman-cli
+          ## Step 6b: Sync Help Text With the API Spec
+          The SDK is generated from openapi.yaml, so its endpoint, parameter, and schema descriptions are the source of truth for what the API does.
+          - For every changed summary or description in /tmp/openapi-diff.patch that belongs to an endpoint, parameter, or field the CLI exposes, update the matching command Usage/Description text and flag Usage string. Use the spec text for anything you add in this run too.
+          - Adapt the text; do not copy it verbatim. API descriptions are written for HTTP callers and often reference other endpoints, HTTP methods, status codes, headers, or JSON body paths that mean nothing to a CLI user. Rewrite those references in CLI terms: name the hypeman command and flags that do the equivalent. For example, \"List volumes with \`GET /volumes\`\" becomes \"List volumes with \`hypeman volume list\`\", and a body field like \`size_gb\` becomes its flag, \`--size\`. Drop API details that do not apply to the command.
+          - Follow existing help text style: keep Usage to one concise line and put caveats in Description.
+          - Preserve meaning exactly: limits, defaults, units, accepted values, deprecations, and caveats must match the spec. Do not invent behavior the spec does not state.
+          - Change only text whose meaning the spec change affects, or existing text the spec now shows to be wrong. Do not restyle unrelated help text.
+
+          ## Step 7: Review and Report
+          - Keep every scratch artifact outside the checkout: write binaries, command output, and logs under $RUNNER_TEMP/cli-scratch, never under /tmp/hypeman-cli.
+          - Read the full diff against origin/main and remove unrelated changes or unnecessary wrappers/casts.
+          - Write $RUNNER_TEMP/cli-coverage-report.md with the new commands/flags, help text updated to match spec changes (with the spec operation or field each follows), and intentional exclusions.
+          - The report replaces the PR description, so it must describe every change in the diff against origin/main, including changes earlier runs left on this branch, not only this run's.
+          - The report becomes part of a public PR. Include no credentials, customer information, private discussions, or internal URLs.
+          - Do not commit, push, change git authentication, or open PRs. Leave the changes for the workflow to validate and publish.
+          - Only go.mod, go.sum, and .go files under cmd/, pkg/, and lib/ are published. The workflow discards every other change before validation.
 
           # SDK Method -> CLI Command Mapping Guide
           Instance operations use Docker-style top-level commands:
@@ -322,54 +451,164 @@ jobs:
           - Handle errors appropriately
           - Match the style of existing commands
 
-          # Output Format
-          After pushing changes, create or update an evergreen PR using gh:
-
-          1. Check if a PR already exists for the cli-coverage-update branch:
-             gh pr list --repo kernel/hypeman-cli --head cli-coverage-update --json number
-
-          2. If PR exists, update it. If not, create a new one.
-
-          If new commands or flags were added:
-            Title: 'CLI: Update hypeman SDK to <version> and add new commands/flags'
-            Body:
-            'This PR updates the Hypeman Go SDK to ${{ steps.sdk-version.outputs.version }} and adds CLI commands/flags for new SDK methods.
-
-            ## SDK Update
-            - Updated hypeman-go to ${{ steps.sdk-version.outputs.version }}
-
-            ## Coverage Analysis
-            This PR was generated by performing a full enumeration of SDK methods and CLI commands.
-
-            ## New Commands
-            - \`hypeman <command>\` for \`client.Resource.Action()\`
-
-            ## New Flags
-            - \`--flag-name\` on \`hypeman <command>\` for \`ResourceParams.FieldName\`
-
-            Triggered by: kernel/hypeman-go@${{ steps.pr-info.outputs.merge_sha || github.sha }}
-            Reviewer: @<commit_author>'
-
-          If only SDK version update (no coverage gaps found):
-            Title: 'CLI: Update Hypeman Go SDK to ${{ steps.sdk-version.outputs.version }}'
-            Body:
-            'This PR updates the Hypeman Go SDK dependency to the latest version.
-
-            ## SDK Update
-            - Updated hypeman-go to ${{ steps.sdk-version.outputs.version }}
-
-            ## Coverage Analysis
-            A full enumeration of SDK methods and CLI commands was performed. No coverage gaps were found.
-
-            Triggered by: kernel/hypeman-go@${{ steps.pr-info.outputs.merge_sha || github.sha }}
-            Reviewer: @<commit_author>'
-
           # Constraints
           - ALWAYS update the SDK version in go.mod - this is the primary purpose
-          - ALWAYS perform the full enumeration (Steps 2-4) - this is critical for finding gaps
+          - ALWAYS perform the full enumeration (Steps 2-5) - this is critical for finding gaps
           - ALL SDK methods in api.md MUST have corresponding CLI commands, EXCEPT those marked with x-cli-skip in openapi.yaml or noted as internal-only in the mapping guide above
           - SKIP endpoints marked with x-cli-skip: true in openapi.yaml - these are internal endpoints not suitable for CLI
+          - The API spec is taken from the API's main branch at release time and can be ahead of the released SDK. The SDK defines what exists: never add commands or flags for operations or fields this SDK version does not have. Use the spec only for the meaning of things the SDK has.
           - Streaming methods may have different CLI implementations (e.g., build events are streamed internally)
-          - Even if no coverage gaps are found, still create a PR for the SDK version bump
-          - Ensure code compiles before pushing
-          " --model ${{ vars.CURSOR_PREFERRED_MODEL }} --force --output-format=text
+          - Even if no coverage gaps are found, still leave the SDK version bump and write the coverage report
+          - Ensure code compiles before finishing
+          "
+
+      - name: Snapshot publishable changes
+        id: snapshot
+        working-directory: /tmp/hypeman-cli
+        env:
+          AGENT_BASE: ${{ steps.cli-clone.outputs.agent_base }}
+        run: |
+          git reset -q --soft "$AGENT_BASE"
+          git add -A
+          git diff --cached --name-only --no-renames -z \
+            | bash "$GITHUB_WORKSPACE/updater/.github/scripts/cli-update-disallowed-paths.sh" > "$RUNNER_TEMP/excluded-paths"
+          if [[ -s "$RUNNER_TEMP/excluded-paths" ]]; then
+            echo "::warning::Discarding changes outside the CLI updater allowlist:"
+            tr '\0' '\n' < "$RUNNER_TEMP/excluded-paths"
+            GIT_LITERAL_PATHSPECS=1 git reset -q --pathspec-from-file="$RUNNER_TEMP/excluded-paths" --pathspec-file-nul
+          fi
+          git diff --cached --binary --no-renames --no-ext-diff --no-textconv > "$RUNNER_TEMP/changes.patch"
+          git reset -q --hard
+          git clean -fdq
+          if [[ -s "$RUNNER_TEMP/changes.patch" ]]; then
+            git apply --index "$RUNNER_TEMP/changes.patch"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify CLI changes
+        working-directory: /tmp/hypeman-cli
+        env:
+          SDK_MODULE: ${{ steps.sdk-version.outputs.module }}
+          SDK_VERSION: ${{ steps.sdk-version.outputs.version }}
+        run: |
+          test -s "$RUNNER_TEMP/cli-coverage-report.md"
+          expected=$(go list -m -f '{{.Version}}' "$SDK_MODULE@$SDK_VERSION")
+          test "$(go list -m -f '{{.Version}}' "$SDK_MODULE")" = "$expected"
+          # Validation must build against published modules, not local replacements.
+          test -z "$(go list -m -f '{{with .Replace}}{{.Path}}{{end}}' "$SDK_MODULE")"
+          go mod edit -json | jq -e '[.Replace[]? | select(.New.Version == null)] | length == 0'
+          go build ./...
+          go vet ./...
+          go test ./...
+          git diff --cached --check
+
+      - name: Upload validated changes
+        if: steps.snapshot.outputs.changed == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: cli-coverage-update
+          path: |
+            ${{ runner.temp }}/changes.patch
+            ${{ runner.temp }}/cli-coverage-report.md
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: generate
+    if: needs.generate.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SDK_VERSION: ${{ needs.generate.outputs.version }}
+      MAIN_SHA: ${{ needs.generate.outputs.main_sha }}
+      UPDATE_SHA: ${{ needs.generate.outputs.update_sha }}
+      REBASED: ${{ needs.generate.outputs.rebased }}
+      AGENT_BASE_TREE: ${{ needs.generate.outputs.agent_base_tree }}
+    steps:
+      - name: Checkout updater scripts
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Download validated changes
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: cli-coverage-update
+          path: ${{ runner.temp }}/cli-coverage-update
+
+      - name: Checkout CLI
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          repository: kernel/hypeman-cli
+          path: cli
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Apply validated changes
+        working-directory: cli
+        run: |
+          git config user.name "kernel-internal[bot]"
+          git config user.email "260533166+kernel-internal[bot]@users.noreply.github.com"
+          if [[ "$REBASED" == true ]]; then
+            git switch -c cli-coverage-update "$UPDATE_SHA"
+            git rebase -q "$MAIN_SHA"
+          else
+            git switch -c cli-coverage-update "$MAIN_SHA"
+          fi
+          if [[ "$(git rev-parse 'HEAD^{tree}')" != "$AGENT_BASE_TREE" ]]; then
+            echo "::error::The rebuilt update branch differs from the one the changes were validated on."
+            exit 1
+          fi
+          git apply --index "$RUNNER_TEMP/cli-coverage-update/changes.patch"
+          git diff --cached --name-only --no-renames -z \
+            | bash ../.github/scripts/cli-update-disallowed-paths.sh > "$RUNNER_TEMP/disallowed-paths"
+          if [[ -s "$RUNNER_TEMP/disallowed-paths" ]]; then
+            echo "::error::Validated changes include paths outside the CLI updater allowlist:"
+            tr '\0' '\n' < "$RUNNER_TEMP/disallowed-paths"
+            exit 1
+          fi
+          if git diff --cached --raw --no-renames | awk '$2 !~ /^(100644|100755|000000)$/ { found = 1 } END { exit !found }'; then
+            echo "::error::Validated changes may only contain regular files."
+            exit 1
+          fi
+          git commit -q -m "Update Hypeman Go SDK to $SDK_VERSION and CLI coverage"
+
+      - name: Generate CLI publishing token
+        id: publish-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.ADMIN_APP_ID }}
+          private-key: ${{ secrets.ADMIN_APP_PRIVATE_KEY }}
+          owner: kernel
+          repositories: hypeman-cli
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Open or update CLI coverage PR
+        working-directory: cli
+        env:
+          GH_TOKEN: ${{ steps.publish-token.outputs.token }}
+        run: |
+          if git diff --quiet origin/main HEAD; then
+            echo "CLI coverage is already up to date."
+            exit 0
+          fi
+          gh auth setup-git
+          git push --force-with-lease="cli-coverage-update:$UPDATE_SHA" origin cli-coverage-update
+
+          body="$RUNNER_TEMP/cli-coverage-pr.md"
+          {
+            printf '## Summary\n\n- Update the Hypeman Go SDK to `%s`.\n' "$SDK_VERSION"
+            printf '\n## Coverage\n\n'
+            head -c 60000 "$RUNNER_TEMP/cli-coverage-update/cli-coverage-report.md"
+            printf '\n## Validation\n\n- Go build\n- Go vet\n- Go tests\n'
+          } > "$body"
+          pr=$(gh pr list --repo kernel/hypeman-cli --head cli-coverage-update --base main \
+            --state open --json number --jq '.[0].number // empty')
+          title="CLI: Update Hypeman Go SDK to $SDK_VERSION"
+          if [[ -n "$pr" ]]; then
+            gh pr edit "$pr" --repo kernel/hypeman-cli --title "$title" --body-file "$body"
+          else
+            gh pr create --repo kernel/hypeman-cli --head cli-coverage-update --base main \
+              --title "$title" --body-file "$body"
+          fi
