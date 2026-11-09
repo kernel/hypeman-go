@@ -1,0 +1,336 @@
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import test from 'node:test';
+
+const workflow = readFileSync(new URL('../workflows/update-cli-coverage.yml', import.meta.url), 'utf8');
+const jobTexts = Object.fromEntries(
+  workflow
+    .slice(workflow.indexOf('\njobs:\n'))
+    .split(/^  (?=[\w-]+:\n)/m)
+    .slice(1)
+    .map((job) => [job.slice(0, job.indexOf(':')), job]),
+);
+const jobs = Object.fromEntries(
+  Object.entries(jobTexts).map(([name, job]) => [name, job.split(/(?=^      - )/m).slice(1)]),
+);
+const steps = Object.values(jobs).flat();
+const step = (job, name) => {
+  const value = jobs[job].find((entry) => entry.startsWith(`      - name: ${name}\n`));
+  assert.ok(value, `missing ${job} step: ${name}`);
+  return value;
+};
+const scriptPath = new URL('../scripts/cli-update-disallowed-paths.sh', import.meta.url).pathname;
+const disallowedPaths = (paths) =>
+  spawnSync('bash', [scriptPath], {
+    input: paths.map((path) => `${path}\0`).join(''),
+    encoding: 'utf8',
+  })
+    .stdout.split('\0')
+    .filter(Boolean);
+
+// The run script of a step, as the runner executes it.
+const runScript = (entry) => {
+  const lines = entry.slice(entry.indexOf('        run: |\n') + '        run: |\n'.length).split('\n');
+  return lines.map((line) => line.replace(/^ {10}/, '')).join('\n');
+};
+const gitEnv = {
+  ...process.env,
+  GIT_CONFIG_GLOBAL: '/dev/null',
+  GIT_CONFIG_NOSYSTEM: '1',
+  GIT_AUTHOR_NAME: 'test',
+  GIT_AUTHOR_EMAIL: 'test@example.com',
+  GIT_COMMITTER_NAME: 'test',
+  GIT_COMMITTER_EMAIL: 'test@example.com',
+};
+const git = (cwd, ...args) => {
+  const result = spawnSync('git', args, { cwd, env: gitEnv, encoding: 'utf8' });
+  assert.equal(result.status, 0, `git ${args.join(' ')}: ${result.stderr}`);
+  return result.stdout.trim();
+};
+const write = (root, path, content, mode) => {
+  mkdirSync(join(root, path, '..'), { recursive: true });
+  writeFileSync(join(root, path), content);
+  if (mode) chmodSync(join(root, path), mode);
+};
+const runStep = (entry, cwd, env) =>
+  spawnSync('bash', ['-e', '-c', runScript(entry)], {
+    cwd,
+    env: { ...gitEnv, ...env },
+    encoding: 'utf8',
+  });
+
+// A temporary workspace with a hypeman-cli-like repo on main.
+const fixture = (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'cli-coverage-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  mkdirSync(join(root, '.github/scripts'), { recursive: true });
+  copyFileSync(scriptPath, join(root, '.github/scripts/cli-update-disallowed-paths.sh'));
+  mkdirSync(join(root, 'updater'));
+  symlinkSync(join(root, '.github'), join(root, 'updater/.github'));
+  const cli = join(root, 'cli');
+  mkdirSync(cli);
+  git(cli, 'init', '-q', '-b', 'main');
+  write(cli, 'go.mod', 'module example.com/cli\n');
+  write(cli, 'pkg/cmd/volume.go', 'package cmd\n');
+  write(cli, 'scripts/test', '#!/bin/sh\n', 0o755);
+  git(cli, 'add', '-A');
+  git(cli, 'commit', '-q', '-m', 'main');
+  const runnerTemp = join(root, 'runner-temp');
+  mkdirSync(join(runnerTemp, 'cli-coverage-update'), { recursive: true });
+  return { root, cli, runnerTemp, mainSha: git(cli, 'rev-parse', 'HEAD'), mainTree: git(cli, 'rev-parse', 'HEAD^{tree}') };
+};
+
+// Stages edits on a scratch branch and writes them as the validated patch.
+const writePatch = ({ cli, runnerTemp, mainSha }, edit) => {
+  git(cli, 'switch', '-q', '-c', 'scratch', mainSha);
+  edit(cli);
+  git(cli, 'add', '-A');
+  writeFileSync(
+    join(runnerTemp, 'cli-coverage-update/changes.patch'),
+    `${git(cli, 'diff', '--cached', '--binary', '--no-renames')}\n`,
+  );
+  git(cli, 'reset', '-q', '--hard');
+  git(cli, 'clean', '-ffdq');
+  git(cli, 'switch', '-q', '--detach', mainSha);
+  git(cli, 'branch', '-q', '-D', 'scratch');
+};
+
+const applyChanges = (fx, env = {}) =>
+  runStep(step('publish', 'Apply validated changes'), fx.cli, {
+    RUNNER_TEMP: fx.runnerTemp,
+    SDK_VERSION: 'v1.2.3',
+    MAIN_SHA: fx.mainSha,
+    UPDATE_SHA: '',
+    REBASED: '',
+    AGENT_BASE_TREE: fx.mainTree,
+    ...env,
+  });
+
+test('actions are pinned and checkouts do not persist credentials', () => {
+  for (const entry of steps.filter((entry) => entry.includes('uses: '))) {
+    assert.match(entry, /uses: [\w/-]+@[a-f0-9]{40}(?:\s|$)/);
+    if (entry.includes('uses: actions/checkout@')) {
+      assert.match(entry, /persist-credentials: false/);
+      assert.doesNotMatch(entry, /token:/);
+    }
+  }
+});
+
+test('credentialed steps only run in the production SDK repository', () => {
+  // The staging mirror shares this file and must not publish unreleased SDK versions.
+  assert.match(workflow, /\n  prefetch:\n    if: github\.repository == 'kernel\/hypeman-go'\n/);
+  assert.match(workflow, /\n  generate:\n    needs: prefetch\n    if: github\.repository == 'kernel\/hypeman-go'\n/);
+});
+
+test('the Pi job references no secrets other than the model API keys', () => {
+  // Every secret a job references is loaded into the runner at job start, and
+  // Pi could read it from runner memory with passwordless sudo.
+  const piJobs = Object.keys(jobTexts).filter((name) => /^\s*pi --print\b/m.test(jobTexts[name]));
+  assert.deepEqual(piJobs, ['generate']);
+  const referenced = (text) => [...text.matchAll(/\bsecrets\b(?:\.([\w-]+))?/g)].map((match) => match[1] ?? '<all>');
+  assert.deepEqual(referenced(workflow.slice(0, workflow.indexOf('\njobs:\n'))), []);
+  for (const name of piJobs) {
+    assert.deepEqual(
+      [...new Set(referenced(jobTexts[name]))].sort(),
+      ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY'],
+      `${name} may only reference the model API keys`,
+    );
+    assert.doesNotMatch(jobTexts[name], /github\.token|create-github-app-token|^    permissions:/m);
+  }
+  assert.match(workflow, /^permissions:\n  contents: read\n\n/m);
+});
+
+test('API source access is read-only, revoked, and kept out of the Pi job', () => {
+  const readToken = step('prefetch', 'Generate API read token');
+  assert.match(readToken, /repositories: hypeman\n/);
+  assert.match(readToken, /permission-contents: read/);
+  assert.doesNotMatch(readToken, /permission-[\w-]+: write/);
+  const fetch = step('prefetch', 'Fetch API spec');
+  assert.match(fetch, /GH_TOKEN: \$\{\{ steps\.api-read-token\.outputs\.token \}\}/);
+  assert.match(fetch, /gh api --method DELETE \/installation\/token\s*$/);
+  assert.match(fetch, /-f until="\$1"/);
+  assert.doesNotMatch(fetch, /gh repo clone/);
+  const tokenUses = steps.filter((entry) => entry.includes('steps.api-read-token.outputs.token'));
+  assert.deepEqual(tokenUses, [fetch]);
+  // Pi only receives the fetched files.
+  assert.match(step('prefetch', 'Upload CLI coverage context'), /name: cli-coverage-context\n/);
+  assert.match(step('generate', 'Download CLI coverage context'), /name: cli-coverage-context\n/);
+  assert.doesNotMatch(
+    step('generate', 'Clone CLI repo'),
+    /GH_TOKEN:|GITHUB_TOKEN:|steps\.[\w-]+\.outputs\.token/,
+  );
+  // Pi can write to the Go caches, so they must never be saved for other runs.
+  assert.match(step('generate', 'Setup Go'), /cache: false/);
+});
+
+test('changes are restricted to the allowlist and validated against published modules', () => {
+  const agent = step('generate', 'Update CLI coverage');
+  const snapshot = step('generate', 'Snapshot publishable changes');
+  const verify = step('generate', 'Verify CLI changes');
+  assert.ok(jobs.generate.indexOf(agent) < jobs.generate.indexOf(snapshot));
+  assert.ok(jobs.generate.indexOf(snapshot) < jobs.generate.indexOf(verify));
+  assert.doesNotMatch(agent, /GH_TOKEN:|GITHUB_TOKEN:|steps\.[\w-]+\.outputs\.token/);
+  assert.match(agent, /Do not commit, push, open, or merge PRs/);
+  assert.match(agent, /cli-scratch/);
+  assert.match(snapshot, /updater\/\.github\/scripts\/cli-update-disallowed-paths\.sh/);
+  assert.match(step('generate', 'Checkout updater scripts'), /sparse-checkout: \.github\/scripts/);
+  assert.match(snapshot, /git reset -q --hard\n\s+git clean -fdq/);
+  assert.match(snapshot, /AGENT_BASE: \$\{\{ steps\.cli-clone\.outputs\.agent_base \}\}/);
+  assert.match(snapshot, /git reset -q --soft "\$AGENT_BASE"\n\s+git add -A/);
+  const prepare = step('generate', 'Clone CLI repo');
+  assert.match(prepare, /main_sha=\$\(git rev-parse origin\/main\)/);
+  assert.match(prepare, /git config user\.email[\s\S]*git rebase origin\/main; then[\s\S]*else\n\s+echo "rebased=true"/);
+  assert.match(prepare, /agent_base=\$\(git rev-parse HEAD\)[\s\S]*agent_base_tree=/);
+  // Only a branch without human commits may be regenerated from main.
+  assert.match(prepare, /git rebase --abort\n[\s\S]*grep -qvxF \\\n\s+-e '260533166\+kernel-internal\[bot\]@users\.noreply\.github\.com'[\s\S]*exit 1\n[\s\S]*git switch -C /);
+  const scriptCalls = workflow.match(/^.*disallowed-paths\.sh.*$/gm);
+  assert.equal(scriptCalls.length, 2);
+  for (const line of scriptCalls) assert.match(line, /\| bash /);
+  assert.match(verify, /\{\{with \.Replace\}\}/);
+  assert.match(verify, /select\(\.New\.Version == null\)/);
+  for (const command of ['go build ./...', 'go vet ./...', 'go test ./...']) {
+    assert.ok(verify.includes(command), `missing ${command}`);
+  }
+  assert.deepEqual(
+    disallowedPaths([
+      'go.mod',
+      'go.sum',
+      'cmd/hypeman/main.go',
+      'pkg/cmd/volumecmd.go',
+      'lib/compose/compose.go',
+      'hypeman',
+      'bin/check-release-environment',
+      'response.json',
+      'pkg/cmd/output.json',
+      'lib/compose/testdata/compose.yaml',
+      '.github/workflows/release.yml',
+      'scripts/test',
+    ]),
+    [
+      'hypeman',
+      'bin/check-release-environment',
+      'response.json',
+      'pkg/cmd/output.json',
+      'lib/compose/testdata/compose.yaml',
+      '.github/workflows/release.yml',
+      'scripts/test',
+    ],
+  );
+});
+
+test('publishing runs in a separate job that never executes repository code', () => {
+  assert.doesNotMatch(jobs.generate.join(''), /permission-[\w-]+: write/);
+  const mintStep = step('publish', 'Generate CLI publishing token');
+  assert.match(mintStep, /repositories: hypeman-cli\n/);
+  assert.match(mintStep, /permission-contents: write/);
+  const publishRuns = jobs.publish.filter((entry) => entry.includes('run: |')).join('');
+  assert.doesNotMatch(publishRuns, /^\s*(go|bun|npm|npx|node|pi|make)\b/m);
+  assert.doesNotMatch(jobs.publish.join(''), /secrets\.(ANTHROPIC|OPENAI|KERNEL)_API_KEY/);
+  const apply = step('publish', 'Apply validated changes');
+  assert.match(apply, /git apply --index "\$RUNNER_TEMP\/cli-coverage-update\/changes\.patch"/);
+  assert.match(apply, /cli-update-disallowed-paths\.sh/);
+  assert.match(apply, /100644\|100755\|000000/);
+  // Publishing rebuilds the exact head the changes were validated on, so human
+  // commits on the update branch are never squashed or dropped.
+  assert.match(apply, /if \[\[ "\$REBASED" == true \]\]; then\n\s+git switch -c \S+ "\$UPDATE_SHA"\n\s+git rebase -q "\$MAIN_SHA"/);
+  assert.match(apply, /"\$\(git rev-parse 'HEAD\^\{tree\}'\)" != "\$AGENT_BASE_TREE"[\s\S]*exit 1/);
+  assert.ok(apply.indexOf('AGENT_BASE_TREE') < apply.indexOf('git apply --index'));
+  const mint = jobs.publish.indexOf(mintStep);
+  assert.ok(jobs.publish.indexOf(apply) < mint);
+  assert.doesNotMatch(jobs.publish.slice(0, mint).join(''), /GH_TOKEN:/);
+  const publish = step('publish', 'Open or update CLI coverage PR');
+  assert.match(publish, /GH_TOKEN: \$\{\{ steps\.publish-token\.outputs\.token \}\}/);
+  assert.match(publish, /gh auth setup-git\n\s+git push --force-with-lease="cli-coverage-update:\$UPDATE_SHA"/);
+  for (const entry of jobs.publish) {
+    assert.doesNotMatch(entry, /continue-on-error: true|always\(\)/);
+  }
+});
+
+test('the publish gate commits allowlisted regular files', (t) => {
+  const fx = fixture(t);
+  writePatch(fx, (cli) => {
+    write(cli, 'go.mod', 'module example.com/cli\n\nrequire example.com/sdk v1.2.3\n');
+    write(cli, 'pkg/cmd/volume.go', 'package cmd\n\nvar size int\n');
+    write(cli, 'lib/compose/spec.go', 'package compose\n');
+    write(cli, 'cmd/hypeman/main.go', 'package main\n', 0o755);
+  });
+  const result = applyChanges(fx);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.equal(git(fx.cli, 'rev-parse', 'HEAD~1'), fx.mainSha);
+  assert.deepEqual(git(fx.cli, 'diff', '--name-only', 'HEAD~1', 'HEAD').split('\n'), [
+    'cmd/hypeman/main.go',
+    'go.mod',
+    'lib/compose/spec.go',
+    'pkg/cmd/volume.go',
+  ]);
+  assert.equal(git(fx.cli, 'log', '-1', '--format=%s'), 'Update Hypeman Go SDK to v1.2.3 and CLI coverage');
+});
+
+test('the publish gate rejects paths outside the allowlist', (t) => {
+  const fx = fixture(t);
+  writePatch(fx, (cli) => {
+    write(cli, 'pkg/cmd/volume.go', 'package cmd\n\nvar size int\n');
+    write(cli, 'scripts/test', '#!/bin/sh\ncurl example.com\n', 0o755);
+  });
+  const result = applyChanges(fx);
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /outside the CLI updater allowlist:\nscripts\/test/);
+  assert.equal(git(fx.cli, 'rev-parse', 'HEAD'), fx.mainSha);
+});
+
+test('the publish gate rejects symlinks and submodules on allowlisted paths', (t) => {
+  for (const edit of [
+    (cli) => symlinkSync('/etc/passwd', join(cli, 'pkg/cmd/passwd.go')),
+    (cli) => {
+      const nested = join(cli, 'pkg/cmd/module.go');
+      mkdirSync(nested);
+      git(nested, 'init', '-q');
+      git(nested, 'commit', '-q', '--allow-empty', '-m', 'nested');
+    },
+  ]) {
+    const fx = fixture(t);
+    writePatch(fx, edit);
+    const result = applyChanges(fx);
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stdout, /may only contain regular files/);
+    assert.equal(git(fx.cli, 'rev-parse', 'HEAD'), fx.mainSha);
+  }
+});
+
+test('the publish gate rejects a base that differs from the validated one', (t) => {
+  const fx = fixture(t);
+  writePatch(fx, (cli) => write(cli, 'pkg/cmd/volume.go', 'package cmd\n\nvar size int\n'));
+  const result = applyChanges(fx, { AGENT_BASE_TREE: 'b'.repeat(40) });
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /differs from the one the changes were validated on/);
+});
+
+test('the snapshot keeps agent commits and drops everything outside the allowlist', (t) => {
+  const fx = fixture(t);
+  git(fx.cli, 'switch', '-q', '-c', 'cli-coverage-update');
+  write(fx.cli, 'pkg/cmd/volume.go', 'package cmd\n\nvar size int\n');
+  git(fx.cli, 'commit', '-q', '-am', 'agent commit');
+  write(fx.cli, 'lib/compose/spec.go', 'package compose\n');
+  write(fx.cli, 'notes.md', 'scratch\n');
+  write(fx.cli, 'scripts/test', '#!/bin/sh\ncurl example.com\n', 0o755);
+  const output = join(fx.runnerTemp, 'output');
+  const result = runStep(step('generate', 'Snapshot publishable changes'), fx.cli, {
+    AGENT_BASE: fx.mainSha,
+    GITHUB_WORKSPACE: fx.root,
+    GITHUB_OUTPUT: output,
+    RUNNER_TEMP: fx.runnerTemp,
+  });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.equal(readFileSync(output, 'utf8'), 'changed=true\n');
+  assert.equal(git(fx.cli, 'rev-parse', 'HEAD'), fx.mainSha);
+  // The validated checkout holds only the allowlisted changes, all staged.
+  assert.deepEqual(git(fx.cli, 'status', '--porcelain', '--untracked-files=all').split('\n'), [
+    'A  lib/compose/spec.go',
+    'M  pkg/cmd/volume.go',
+  ]);
+  const patch = readFileSync(join(fx.runnerTemp, 'changes.patch'), 'utf8');
+  assert.doesNotMatch(patch, /notes\.md|scripts\/test/);
+});
