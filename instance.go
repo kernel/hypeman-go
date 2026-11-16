@@ -204,15 +204,15 @@ func (r *InstanceService) Stats(ctx context.Context, id string, opts ...option.R
 	return res, err
 }
 
-// Stop instance (graceful shutdown)
-func (r *InstanceService) Stop(ctx context.Context, id string, opts ...option.RequestOption) (res *Instance, err error) {
+// Stop instance (graceful shutdown, or forced power-off)
+func (r *InstanceService) Stop(ctx context.Context, id string, body InstanceStopParams, opts ...option.RequestOption) (res *Instance, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
 	path := fmt.Sprintf("instances/%s/stop", id)
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
 
@@ -1867,6 +1867,23 @@ func (r InstanceStatParams) URLQuery() (v url.Values, err error) {
 		ArrayFormat:  apiquery.ArrayQueryFormatComma,
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
+}
+
+type InstanceStopParams struct {
+	// Power the VM off without asking the guest to shut down. Use when the guest state
+	// will be discarded, for example before restoring a snapshot. A forced stop of a
+	// macOS guest is never graceful, so it cannot be used for a stopped snapshot or
+	// fork until the guest is booted and stopped gracefully again.
+	Force param.Opt[bool] `json:"force,omitzero"`
+	paramObj
+}
+
+func (r InstanceStopParams) MarshalJSON() (data []byte, err error) {
+	type shadow InstanceStopParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *InstanceStopParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type InstanceWaitParams struct {
