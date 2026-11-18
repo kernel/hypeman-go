@@ -29,19 +29,20 @@ func TestBuildNewWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Builds.New(context.TODO(), hypeman.BuildNewParams{
-		Source:          io.Reader(bytes.NewBuffer([]byte("Example data"))),
-		BaseImageDigest: hypeman.String("base_image_digest"),
-		BuilderID:       hypeman.String("builder_id"),
-		CacheScope:      hypeman.String("cache_scope"),
-		CPUs:            hypeman.Int(0),
-		Dockerfile:      hypeman.String("dockerfile"),
-		GlobalCacheKey:  hypeman.String("global_cache_key"),
-		ImageName:       hypeman.String("image_name"),
-		IsAdminBuild:    hypeman.String("is_admin_build"),
-		MemoryMB:        hypeman.Int(0),
-		Secrets:         hypeman.String("secrets"),
-		Tags:            hypeman.String("tags"),
-		TimeoutSeconds:  hypeman.Int(0),
+		Source:              io.Reader(bytes.NewBuffer([]byte("Example data"))),
+		BaseImageDigest:     hypeman.String("base_image_digest"),
+		BuilderID:           hypeman.String("builder_id"),
+		CacheScope:          hypeman.String("cache_scope"),
+		CPUs:                hypeman.Int(0),
+		Dockerfile:          hypeman.String("dockerfile"),
+		GlobalCacheKey:      hypeman.String("global_cache_key"),
+		ImageName:           hypeman.String("image_name"),
+		IsAdminBuild:        hypeman.String("is_admin_build"),
+		MemoryMB:            hypeman.Int(0),
+		RegistryCredentials: hypeman.String(`{"registry.example":{"username":"AWS","password":"<temporary-token>"}}`),
+		Secrets:             hypeman.String("secrets"),
+		Tags:                hypeman.String("tags"),
+		TimeoutSeconds:      hypeman.Int(0),
 	})
 	if err != nil {
 		var apierr *hypeman.Error
