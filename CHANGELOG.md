@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.0](https://github.com/kernel/hypeman-go/compare/v0.29.0...v0.30.0) (2026-11-23)
+
+
+### Features
+
+* Add force option to instance stop ([036f91a](https://github.com/kernel/hypeman-go/commit/036f91afa6b8bb1b360d1a2394457cf7cca7ab76))
+* Support per-build registry credentials ([7e83fb7](https://github.com/kernel/hypeman-go/commit/7e83fb75b3c3998fdd44254b631d6eaf8fef70c8))
+
 ## [0.29.0](https://github.com/kernel/hypeman-go/compare/v0.28.0...v0.29.0) (2026-11-10)
 
 
